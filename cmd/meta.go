@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"context"
+	"errors"
 	"io/ioutil"
 	"log"
 	"os"
@@ -16,9 +17,30 @@ import (
 )
 
 type meta struct {
+	Editor   string
+	RootPath string
+	PostDir  string
 }
 
 func (m *meta) init(args []string) error {
+	rootPath := os.Getenv("BLOG_ROOT")
+	if rootPath == "" {
+		return errors.New("BLOG_ROOT is missing")
+	}
+	m.RootPath = rootPath
+
+	postDir := os.Getenv("BLOG_POST_DIR")
+	if postDir == "" {
+		return errors.New("BLOG_POST_DIR is missing")
+	}
+	m.PostDir = postDir
+
+	editor := os.Getenv("BLOG_EDITOR")
+	if editor == "" {
+		editor = os.Getenv("EDITOR")
+	}
+	m.Editor = editor
+
 	return nil
 }
 
@@ -34,13 +56,13 @@ func (m *meta) hugo(done <-chan bool) {
 	}()
 
 	hugo := shell.Shell{
+		Command: "hugo",
+		Args:    []string{"server", "-D"},
+		Dir:     m.RootPath,
+		Env:     map[string]string{},
 		Stdin:   os.Stdin,
 		Stdout:  ioutil.Discard,
 		Stderr:  ioutil.Discard,
-		Env:     map[string]string{},
-		Command: "hugo",
-		Args:    []string{"server", "-D"},
-		Dir:     os.Getenv("BLOG_ROOT"),
 	}
 
 	go func() {
@@ -51,7 +73,7 @@ func (m *meta) hugo(done <-chan bool) {
 
 func (m *meta) prompt() (blog.Article, error) {
 	post := blog.Post{
-		Path:  filepath.Join(os.Getenv("BLOG_ROOT"), os.Getenv("BLOG_POST_DIR")),
+		Path:  filepath.Join(m.RootPath, m.PostDir),
 		Depth: 1,
 	}
 	err := post.Walk()

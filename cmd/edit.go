@@ -17,7 +17,7 @@ func newEditCmd() *cobra.Command {
 
 	editCmd := &cobra.Command{
 		Use:                   "edit",
-		Short:                 "Edit gist files",
+		Short:                 "Edit existing articles",
 		Aliases:               []string{},
 		DisableFlagsInUseLine: true,
 		SilenceUsage:          true,
@@ -44,6 +44,6 @@ func (c *editCmd) run(args []string) error {
 		return err
 	}
 
-	vim := shell.New("vim", article.Path)
-	return vim.Run(context.Background())
+	editor := shell.New(c.Editor, article.Path)
+	return editor.Run(context.Background())
 }
