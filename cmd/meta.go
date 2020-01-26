@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 
 	"github.com/b4b4r07/blog/pkg/blog"
@@ -50,7 +51,7 @@ func (m *meta) hugo(done <-chan bool) {
 
 func (m *meta) prompt() (blog.Article, error) {
 	post := blog.Post{
-		Path:  filepath.Join(os.Getenv("BLOG_ROOT"), "content", "post"),
+		Path:  filepath.Join(os.Getenv("BLOG_ROOT"), os.Getenv("BLOG_POST_DIR")),
 		Depth: 1,
 	}
 	err := post.Walk()
@@ -61,24 +62,40 @@ func (m *meta) prompt() (blog.Article, error) {
 
 	funcMap := promptui.FuncMap
 	funcMap["time"] = humanize.Time
+	funcMap["tags"] = func(tags []string) string {
+		sort.Strings(tags)
+		return strings.Join(tags, ", ")
+	}
 	templates := &promptui.SelectTemplates{
 		Label:    "{{ . }}",
 		Active:   promptui.IconSelect + " {{ .Body.Title | cyan }}",
 		Inactive: "  {{ .Body.Title | faint }}",
 		Selected: promptui.IconGood + " {{ .Body.Title }}",
 		Details: `
-{{ "Draft:" | faint }}	{{ .Body.Draft }}
 {{ "Date:" | faint }}	{{ .Date | time }}
+{{ "Description:" | faint }}	{{ .Body.Description }}
+{{ "Draft:" | faint }}	{{ .Body.Draft }}
+{{ "Tags:" | faint }}	{{ .Body.Tags | tags }}
 `,
 		FuncMap: funcMap,
 	}
 
+	tagsContains := func(tags []string, input string) bool {
+		for _, tag := range tags {
+			if strings.ToLower(tag) == strings.ToLower(input) {
+				return true
+			}
+		}
+		return false
+	}
+
 	searcher := func(input string, index int) bool {
 		article := post.Articles[index]
+		input = strings.Replace(strings.ToLower(input), " ", "", -1)
 		title := strings.Replace(strings.ToLower(article.Body.Title), " ", "", -1)
 		filename := strings.Replace(strings.ToLower(article.File), " ", "", -1)
-		input = strings.Replace(strings.ToLower(input), " ", "", -1)
-		return strings.Contains(title, input) || strings.Contains(filename, input)
+		tagMatch := tagsContains(article.Body.Tags, input)
+		return strings.Contains(title, input) || strings.Contains(filename, input) || tagMatch
 	}
 
 	prompt := promptui.Select{
@@ -90,6 +107,7 @@ func (m *meta) prompt() (blog.Article, error) {
 		StartInSearchMode: true,
 		HideSelected:      true,
 	}
+
 	i, _, err := prompt.Run()
 	return post.Articles[i], err
 }

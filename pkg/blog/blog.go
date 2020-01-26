@@ -11,17 +11,6 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-// type Article struct {
-// 	Title       string    `json:"title"`
-// 	Date        time.Time `json:"date"`
-// 	Description string    `json:"description"`
-// 	Categories  []string  `json:"categories"`
-// 	Draft       bool      `json:"draft"`
-// 	Author      string    `json:"author"`
-// 	Oldlink     string    `json:"oldlink"`
-// 	Tags        []string  `json:"tags"`
-// }
-
 // Article represents the article information
 type Article struct {
 	Date time.Time
@@ -30,18 +19,18 @@ type Article struct {
 	Body Body
 }
 
-func newArticle(path, filename string) (*Article, error) {
-	article := Article{
-		File: filename,
-		Path: filepath.Join(path, "content", "post", filename+".md"),
-	}
-	content, err := readFrontMatter(article.Path)
-	if err != nil {
-		return &article, err
-	}
-	err = yaml.Unmarshal(content, &article.Body)
-	return &article, err
-}
+// func newArticle(path, filename string) (*Article, error) {
+// 	article := Article{
+// 		File: filename,
+// 		Path: filepath.Join(path, "content", "post", filename+".md"),
+// 	}
+// 	content, err := readFrontMatter(article.Path)
+// 	if err != nil {
+// 		return &article, err
+// 	}
+// 	err = yaml.Unmarshal(content, &article.Body)
+// 	return &article, err
+// }
 
 // Save updates the body contents
 func (a *Article) Save() error {
@@ -69,26 +58,6 @@ type Body struct {
 // Articles is a collection of articles
 type Articles []Article
 
-// Filter filters articles
-func (as *Articles) Filter(tag string) Articles {
-	articles := make(Articles, 0)
-	for _, article := range *as {
-		if stringInSlice(tag, article.Body.Tags) {
-			articles = append(articles, article)
-		}
-	}
-	return articles
-}
-
-func stringInSlice(a string, list []string) bool {
-	for _, b := range list {
-		if b == a {
-			return true
-		}
-	}
-	return false
-}
-
 // Post represents
 type Post struct {
 	Path     string
@@ -96,6 +65,7 @@ type Post struct {
 	Articles Articles
 }
 
+// Walk walks post directory and search markdow files
 func (p *Post) Walk() error {
 	return filepath.Walk(p.Path, func(path string, info os.FileInfo, err error) error {
 		if info == nil {
