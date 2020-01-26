@@ -26,4 +26,14 @@ archives:
       - goos: windows
         format: zip
 release:
-  prerelease: auto
+  github:
+    owner: b4b4r07
+    name: blog
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
+      - Merge pull request
+      - Merge branch
