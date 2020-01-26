@@ -80,7 +80,11 @@ func (m *meta) prompt() (blog.Article, error) {
 	if err != nil {
 		return blog.Article{}, err
 	}
+
 	post.Articles.SortByDate()
+	post.Articles.Filter(func(article blog.Article) bool {
+		return !article.Draft
+	})
 
 	funcMap := promptui.FuncMap
 	funcMap["time"] = humanize.Time
