@@ -13,10 +13,11 @@ import (
 
 // Article represents the article information
 type Article struct {
+	Meta
+
 	Date time.Time
 	File string
 	Path string
-	Body Body
 }
 
 // func newArticle(path, filename string) (*Article, error) {
@@ -28,23 +29,23 @@ type Article struct {
 // 	if err != nil {
 // 		return &article, err
 // 	}
-// 	err = yaml.Unmarshal(content, &article.Body)
+// 	err = yaml.Unmarshal(content, &article.Meta)
 // 	return &article, err
 // }
 
-// Save updates the body contents
+// Save updates the meta contents
 func (a *Article) Save() error {
-	body, err := yaml.Marshal(&a.Body)
+	meta, err := yaml.Marshal(&a.Meta)
 	if err != nil {
 		return err
 	}
-	body = append([]byte("---\n"), body...)
-	body = append(body, []byte("---\n")...)
-	return ioutil.WriteFile(a.Path, body, 0644)
+	meta = append([]byte("---\n"), meta...)
+	meta = append(meta, []byte("---\n")...)
+	return ioutil.WriteFile(a.Path, meta, 0644)
 }
 
-// Body represents article contents
-type Body struct {
+// Meta represents article contents
+type Meta struct {
 	Title       string   `yaml:"title"`
 	Date        string   `yaml:"date"`
 	Description string   `yaml:"description"`
@@ -84,16 +85,16 @@ func (p *Post) Walk() error {
 		if err != nil {
 			return err
 		}
-		var body Body
-		if err = yaml.Unmarshal(content, &body); err != nil {
+		var meta Meta
+		if err = yaml.Unmarshal(content, &meta); err != nil {
 			return err
 		}
-		date, _ := time.Parse("2006-01-02T15:04:05-07:00", body.Date)
+		date, _ := time.Parse("2006-01-02T15:04:05-07:00", meta.Date)
 		p.Articles = append(p.Articles, Article{
 			Date: date,
 			File: filepath.Base(path),
 			Path: path,
-			Body: body,
+			Meta: meta,
 		})
 		return nil
 	})

@@ -90,14 +90,14 @@ func (m *meta) prompt() (blog.Article, error) {
 	}
 	templates := &promptui.SelectTemplates{
 		Label:    "{{ . }}",
-		Active:   promptui.IconSelect + " {{ .Body.Title | cyan }}",
-		Inactive: "  {{ .Body.Title | faint }}",
-		Selected: promptui.IconGood + " {{ .Body.Title }}",
+		Active:   promptui.IconSelect + " {{ .Title | cyan }}",
+		Inactive: "  {{ .Title | faint }}",
+		Selected: promptui.IconGood + " {{ .Title }}",
 		Details: `
 {{ "Date:" | faint }}	{{ .Date | time }}
-{{ "Description:" | faint }}	{{ .Body.Description }}
-{{ "Draft:" | faint }}	{{ .Body.Draft }}
-{{ "Tags:" | faint }}	{{ .Body.Tags | tags }}
+{{ "Description:" | faint }}	{{ .Description }}
+{{ "Draft:" | faint }}	{{ .Draft }}
+{{ "Tags:" | faint }}	{{ .Tags | tags }}
 `,
 		FuncMap: funcMap,
 	}
@@ -114,9 +114,9 @@ func (m *meta) prompt() (blog.Article, error) {
 	searcher := func(input string, index int) bool {
 		article := post.Articles[index]
 		input = strings.Replace(strings.ToLower(input), " ", "", -1)
-		title := strings.Replace(strings.ToLower(article.Body.Title), " ", "", -1)
+		title := strings.Replace(strings.ToLower(article.Title), " ", "", -1)
 		filename := strings.Replace(strings.ToLower(article.File), " ", "", -1)
-		tagMatch := tagsContains(article.Body.Tags, input)
+		tagMatch := tagsContains(article.Tags, input)
 		return strings.Contains(title, input) || strings.Contains(filename, input) || tagMatch
 	}
 
