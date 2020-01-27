@@ -2,7 +2,6 @@ package blog
 
 import (
 	"bufio"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"sort"
@@ -18,30 +17,6 @@ type Article struct {
 	Date time.Time
 	File string
 	Path string
-}
-
-// func newArticle(path, filename string) (*Article, error) {
-// 	article := Article{
-// 		File: filename,
-// 		Path: filepath.Join(path, "content", "post", filename+".md"),
-// 	}
-// 	content, err := readFrontMatter(article.Path)
-// 	if err != nil {
-// 		return &article, err
-// 	}
-// 	err = yaml.Unmarshal(content, &article.Meta)
-// 	return &article, err
-// }
-
-// Save updates the meta contents
-func (a *Article) Save() error {
-	meta, err := yaml.Marshal(&a.Meta)
-	if err != nil {
-		return err
-	}
-	meta = append([]byte("---\n"), meta...)
-	meta = append(meta, []byte("---\n")...)
-	return ioutil.WriteFile(a.Path, meta, 0644)
 }
 
 // Meta represents article contents
