@@ -35,9 +35,9 @@ func newEditCmd() *cobra.Command {
 }
 
 func (c *editCmd) run(args []string) error {
-	done := make(chan bool)
-	c.hugo(done)
-	defer func() { done <- true }()
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	go c.runHugoServer(ctx)
 
 	article, err := c.prompt()
 	if err != nil {

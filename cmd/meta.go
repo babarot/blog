@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"os/signal"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -44,14 +45,18 @@ func (m *meta) init(args []string) error {
 	return nil
 }
 
-func (m *meta) hugo(done <-chan bool) {
-	ctx, cancel := context.WithCancel(context.Background())
+func (m *meta) runHugoServer(ctx context.Context) {
+	sig := make(chan os.Signal, 1)
+	signal.Notify(sig, os.Interrupt)
+	defer signal.Stop(sig)
+
+	ctx, cancel := context.WithCancel(ctx)
 	go func() {
 		select {
-		case <-done:
-			log.Printf("[DEBUG] [hugo process] finished")
-			cancel()
+		case <-sig:
 		case <-ctx.Done():
+			log.Printf("[DEBUG] hugo: server finished")
+			cancel()
 		}
 	}()
 
@@ -65,10 +70,8 @@ func (m *meta) hugo(done <-chan bool) {
 		Stderr:  ioutil.Discard,
 	}
 
-	go func() {
-		log.Printf("[DEBUG] [hugo process] started as background process")
-		hugo.Run(ctx)
-	}()
+	log.Printf("[DEBUG] hugo: run server")
+	hugo.Run(ctx)
 }
 
 func (m *meta) prompt() (blog.Article, error) {
