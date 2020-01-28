@@ -1,9 +1,10 @@
 package cmd
 
 import (
+	"context"
 	"strings"
 
-	"github.com/k0kubun/pp"
+	"github.com/b4b4r07/blog/pkg/shell"
 	"github.com/manifoldco/promptui"
 	"github.com/spf13/cobra"
 )
@@ -36,7 +37,6 @@ func newTagCmd() *cobra.Command {
 }
 
 func (c *tagCmd) run(args []string) error {
-	// tags := Tags{}
 	tt := map[string]Tag{}
 	for _, article := range c.Post.Articles {
 		for _, tag := range article.Tags {
@@ -56,37 +56,14 @@ func (c *tagCmd) run(args []string) error {
 		})
 	}
 
-	tag, err := prompt(tags)
+	tag, err := selectTags(tags)
 	if err != nil {
 		return err
 	}
 
-	pp.Println(tag)
-	return nil
-
-	// articles := c.Post.Articles
-	// articles.Filter(func(article blog.Article) bool {
-	// 	tagsContains := func(tags []string, input string) bool {
-	// 		for _, tag := range tags {
-	// 			if strings.ToLower(tag) == strings.ToLower(input) {
-	// 				return true
-	// 			}
-	// 		}
-	// 		return false
-	// 	}
-	// 	return tagsContains(article.Tags, tag)
-	// })
-	//
-	// var paths []string
-	// for _, article := range articles {
-	// 	paths = append(paths, article.Path)
-	// }
-	//
-	// editor := shell.New(c.Editor, paths...)
-	// return editor.Run(context.Background())
+	editor := shell.New(c.Editor, tag.Paths...)
+	return editor.Run(context.Background())
 }
-
-// type Tags map[string]Tag
 
 type Tag struct {
 	Name   string
@@ -94,7 +71,7 @@ type Tag struct {
 	Paths  []string
 }
 
-func prompt(tags []Tag) (Tag, error) {
+func selectTags(tags []Tag) (Tag, error) {
 	templates := &promptui.SelectTemplates{
 		Label:    "{{ .Name }}",
 		Active:   promptui.IconSelect + " {{ .Name | cyan }}",
