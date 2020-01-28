@@ -1,11 +1,9 @@
 package cmd
 
 import (
-	"context"
 	"strings"
 
-	"github.com/b4b4r07/blog/pkg/blog"
-	"github.com/b4b4r07/blog/pkg/shell"
+	"github.com/k0kubun/pp"
 	"github.com/manifoldco/promptui"
 	"github.com/spf13/cobra"
 )
@@ -38,9 +36,24 @@ func newTagCmd() *cobra.Command {
 }
 
 func (c *tagCmd) run(args []string) error {
-	var tags []string
+	// tags := Tags{}
+	tt := map[string]Tag{}
 	for _, article := range c.Post.Articles {
-		tags = append(tags, article.Tags...)
+		for _, tag := range article.Tags {
+			t := tt[tag]
+			t.Titles = append(t.Titles, article.Title)
+			t.Paths = append(t.Paths, article.Path)
+			tt[tag] = t
+		}
+	}
+
+	var tags []Tag
+	for name, tag := range tt {
+		tags = append(tags, Tag{
+			Name:   name,
+			Titles: tag.Titles,
+			Paths:  tag.Paths,
+		})
 	}
 
 	tag, err := prompt(tags)
@@ -48,61 +61,56 @@ func (c *tagCmd) run(args []string) error {
 		return err
 	}
 
-	articles := c.Post.Articles
+	pp.Println(tag)
+	return nil
 
-	articles.Filter(func(article blog.Article) bool {
-		tagsContains := func(tags []string, input string) bool {
-			for _, tag := range tags {
-				if strings.ToLower(tag) == strings.ToLower(input) {
-					return true
-				}
-			}
-			return false
-		}
-		return tagsContains(article.Tags, tag)
-	})
-
-	var paths []string
-	for _, article := range articles {
-		paths = append(paths, article.Path)
-	}
-
-	editor := shell.New(c.Editor, paths...)
-	return editor.Run(context.Background())
+	// articles := c.Post.Articles
+	// articles.Filter(func(article blog.Article) bool {
+	// 	tagsContains := func(tags []string, input string) bool {
+	// 		for _, tag := range tags {
+	// 			if strings.ToLower(tag) == strings.ToLower(input) {
+	// 				return true
+	// 			}
+	// 		}
+	// 		return false
+	// 	}
+	// 	return tagsContains(article.Tags, tag)
+	// })
+	//
+	// var paths []string
+	// for _, article := range articles {
+	// 	paths = append(paths, article.Path)
+	// }
+	//
+	// editor := shell.New(c.Editor, paths...)
+	// return editor.Run(context.Background())
 }
+
+// type Tags map[string]Tag
 
 type Tag struct {
-	Name  string
-	Paths []string
-	Num   int
+	Name   string
+	Titles []string
+	Paths  []string
 }
 
-func prompt(tags []string) (string, error) {
+func prompt(tags []Tag) (Tag, error) {
 	templates := &promptui.SelectTemplates{
-		Label:    "{{ . }}",
-		Active:   promptui.IconSelect + " {{ . | cyan }}",
-		Inactive: "  {{ . | faint }}",
-		Selected: promptui.IconGood + " {{ . }}",
-		// 			Details: `
-		// {{ "Date:" | faint }}	{{ .Date | time }}
-		// {{ "Description:" | faint }}	{{ .Description }}
-		// {{ "Draft:" | faint }}	{{ .Draft }}
-		// {{ "Tags:" | faint }}	{{ .Tags | tags }}
-		// `,
+		Label:    "{{ .Name }}",
+		Active:   promptui.IconSelect + " {{ .Name | cyan }}",
+		Inactive: "  {{ .Name | faint }}",
+		Selected: promptui.IconGood + " {{ .Name }}",
+		Details: `
+{{ "Titles:" | faint }}
+    {{ .Titles | len | faint }} {{ "article(s)" | faint }}
+    {{- range .Titles }}
+    - {{ . }}
+    {{- end }}
+`,
 	}
-
-	m := make(map[string]bool)
-	uniq := []string{}
-	for _, tag := range tags {
-		if !m[tag] {
-			m[tag] = true
-			uniq = append(uniq, tag)
-		}
-	}
-	tags = uniq
 
 	searcher := func(input string, index int) bool {
-		tag := strings.Replace(strings.ToLower(tags[index]), " ", "", -1)
+		tag := strings.Replace(strings.ToLower(tags[index].Name), " ", "", -1)
 		input = strings.Replace(strings.ToLower(input), " ", "", -1)
 		return strings.Contains(tag, input)
 	}
@@ -117,6 +125,6 @@ func prompt(tags []string) (string, error) {
 		HideSelected:      true,
 	}
 
-	_, tag, err := prompt.Run()
-	return tag, err
+	i, _, err := prompt.Run()
+	return tags[i], err
 }
