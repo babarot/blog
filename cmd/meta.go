@@ -21,6 +21,8 @@ type meta struct {
 	Editor   string
 	RootPath string
 	PostDir  string
+
+	Post blog.Post
 }
 
 func (m *meta) init(args []string) error {
@@ -41,6 +43,23 @@ func (m *meta) init(args []string) error {
 		editor = os.Getenv("EDITOR")
 	}
 	m.Editor = editor
+
+	post := blog.Post{
+		Path:  filepath.Join(m.RootPath, m.PostDir),
+		Depth: 1,
+	}
+
+	err := post.Walk()
+	if err != nil {
+		return err
+	}
+
+	post.Articles.SortByDate()
+	post.Articles.Filter(func(article blog.Article) bool {
+		return !article.Draft
+	})
+
+	m.Post = post
 
 	return nil
 }
@@ -75,20 +94,6 @@ func (m *meta) runHugoServer(ctx context.Context) {
 }
 
 func (m *meta) prompt() (blog.Article, error) {
-	post := blog.Post{
-		Path:  filepath.Join(m.RootPath, m.PostDir),
-		Depth: 1,
-	}
-	err := post.Walk()
-	if err != nil {
-		return blog.Article{}, err
-	}
-
-	post.Articles.SortByDate()
-	post.Articles.Filter(func(article blog.Article) bool {
-		return !article.Draft
-	})
-
 	funcMap := promptui.FuncMap
 	funcMap["time"] = humanize.Time
 	funcMap["tags"] = func(tags []string) string {
@@ -119,7 +124,7 @@ func (m *meta) prompt() (blog.Article, error) {
 	}
 
 	searcher := func(input string, index int) bool {
-		article := post.Articles[index]
+		article := m.Post.Articles[index]
 		input = strings.Replace(strings.ToLower(input), " ", "", -1)
 		title := strings.Replace(strings.ToLower(article.Title), " ", "", -1)
 		filename := strings.Replace(strings.ToLower(article.File), " ", "", -1)
@@ -129,7 +134,7 @@ func (m *meta) prompt() (blog.Article, error) {
 
 	prompt := promptui.Select{
 		Label:             "Select:",
-		Items:             post.Articles,
+		Items:             m.Post.Articles,
 		Size:              10,
 		Templates:         templates,
 		Searcher:          searcher,
@@ -138,5 +143,5 @@ func (m *meta) prompt() (blog.Article, error) {
 	}
 
 	i, _, err := prompt.Run()
-	return post.Articles[i], err
+	return m.Post.Articles[i], err
 }
