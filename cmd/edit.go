@@ -36,7 +36,7 @@ func newEditCmd() *cobra.Command {
 	}
 
 	f := editCmd.Flags()
-	f.BoolVar(&c.tag, "with-tags", false, "with tags")
+	f.BoolVarP(&c.tag, "with-tags", "t", false, "with tags")
 
 	return editCmd
 }
