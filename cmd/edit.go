@@ -4,6 +4,7 @@ import (
 	"context"
 	"strings"
 
+	"github.com/b4b4r07/blog/pkg/blog"
 	"github.com/b4b4r07/blog/pkg/shell"
 	"github.com/manifoldco/promptui"
 	"github.com/spf13/cobra"
@@ -12,7 +13,8 @@ import (
 type editCmd struct {
 	meta
 
-	tag bool
+	tags   bool
+	noTags bool
 }
 
 // newEditCmd creates a new edit command
@@ -36,7 +38,8 @@ func newEditCmd() *cobra.Command {
 	}
 
 	f := editCmd.Flags()
-	f.BoolVarP(&c.tag, "with-tags", "t", false, "with tags")
+	f.BoolVarP(&c.tags, "with-tags", "t", false, "with tags")
+	f.BoolVarP(&c.noTags, "no-tags", "", false, "with no  tags")
 
 	return editCmd
 }
@@ -49,8 +52,10 @@ func (c *editCmd) run(args []string) error {
 	switch {
 	default:
 		return c.withTitles(args)
-	case c.tag:
+	case c.tags:
 		return c.withTags(args)
+	case c.noTags:
+		return c.withNoTags(args)
 	}
 }
 
@@ -90,6 +95,20 @@ func (c *editCmd) withTags(args []string) error {
 	}
 
 	editor := shell.New(c.Editor, tag.Paths...)
+	return editor.Run(context.Background())
+}
+
+func (c *editCmd) withNoTags(args []string) error {
+	c.Post.Articles.Filter(func(article blog.Article) bool {
+		return len(article.Tags) == 0
+	})
+
+	article, err := c.prompt()
+	if err != nil {
+		return err
+	}
+
+	editor := shell.New(c.Editor, article.Path)
 	return editor.Run(context.Background())
 }
 

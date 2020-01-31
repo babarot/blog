@@ -94,6 +94,10 @@ func (m *meta) runHugoServer(ctx context.Context) {
 }
 
 func (m *meta) prompt() (blog.Article, error) {
+	if len(m.Post.Articles) == 0 {
+		return blog.Article{}, errors.New("no article found")
+	}
+
 	funcMap := promptui.FuncMap
 	funcMap["time"] = humanize.Time
 	funcMap["tags"] = func(tags []string) string {
