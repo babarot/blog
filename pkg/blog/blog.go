@@ -66,23 +66,32 @@ func (p *Post) Walk() error {
 		default:
 			return nil
 		}
-		content, err := readFrontMatter(path)
+		article, err := NewArticle(path)
 		if err != nil {
 			return err
 		}
-		var meta Meta
-		if err = yaml.Unmarshal(content, &meta); err != nil {
-			return err
-		}
-		date, _ := time.Parse("2006-01-02T15:04:05-07:00", meta.Date)
-		p.Articles = append(p.Articles, Article{
-			Date: date,
-			File: filepath.Base(path),
-			Path: path,
-			Meta: meta,
-		})
+		p.Articles = append(p.Articles, article)
 		return nil
 	})
+}
+
+func NewArticle(path string) (Article, error) {
+	content, err := readFrontMatter(path)
+	if err != nil {
+		return Article{}, err
+	}
+	var meta Meta
+	if err = yaml.Unmarshal(content, &meta); err != nil {
+		return Article{}, err
+	}
+	date, _ := time.Parse("2006-01-02T15:04:05-07:00", meta.Date)
+	return Article{
+		Date: date,
+		File: filepath.Base(path),
+		Path: path,
+		Meta: meta,
+	}, nil
+	// return nil
 }
 
 // SortByDate sorts by the date of the article

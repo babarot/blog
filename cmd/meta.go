@@ -93,7 +93,11 @@ func (m *meta) runHugoServer(ctx context.Context) {
 	hugo.Run(ctx)
 }
 
-func (m *meta) prompt() (blog.Article, error) {
+func (m *meta) prompt(articles ...blog.Article) (blog.Article, error) {
+	if len(articles) > 0 {
+		m.Post.Articles = append([]blog.Article{}, articles...)
+	}
+
 	if len(m.Post.Articles) == 0 {
 		return blog.Article{}, errors.New("no article found")
 	}
