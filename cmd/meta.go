@@ -6,7 +6,6 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
-	"os/signal"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -65,19 +64,8 @@ func (m *meta) init(args []string) error {
 }
 
 func (m *meta) runHugoServer(ctx context.Context) {
-	sig := make(chan os.Signal, 1)
-	signal.Notify(sig, os.Interrupt)
-	defer signal.Stop(sig)
-
 	ctx, cancel := context.WithCancel(ctx)
-	go func() {
-		select {
-		case <-sig:
-		case <-ctx.Done():
-			log.Printf("[DEBUG] hugo: server finished")
-			cancel()
-		}
-	}()
+	defer cancel()
 
 	hugo := shell.Shell{
 		Command: "hugo",
@@ -131,9 +119,15 @@ func (m *meta) prompt() (blog.Article, error) {
 		article := m.Post.Articles[index]
 		input = strings.Replace(strings.ToLower(input), " ", "", -1)
 		title := strings.Replace(strings.ToLower(article.Title), " ", "", -1)
-		filename := strings.Replace(strings.ToLower(article.File), " ", "", -1)
+		filename := strings.Replace(strings.ToLower(article.Filename), " ", "", -1)
+		dirname := strings.Replace(strings.ToLower(article.Dirname), " ", "", -1)
 		tagMatch := tagsContains(article.Tags, input)
-		return strings.Contains(title, input) || strings.Contains(filename, input) || tagMatch
+		switch filename {
+		case "index.md":
+			return strings.Contains(title, input) || strings.Contains(dirname, input) || tagMatch
+		default:
+			return strings.Contains(title, input) || strings.Contains(filename, input) || tagMatch
+		}
 	}
 
 	prompt := promptui.Select{

@@ -14,9 +14,10 @@ import (
 type Article struct {
 	Meta
 
-	Date time.Time
-	File string
-	Path string
+	Date     time.Time
+	Filename string
+	Dirname  string
+	Path     string
 }
 
 // Meta represents article contents
@@ -76,10 +77,11 @@ func (p *Post) Walk() error {
 		}
 		date, _ := time.Parse("2006-01-02T15:04:05-07:00", meta.Date)
 		p.Articles = append(p.Articles, Article{
-			Date: date,
-			File: filepath.Base(path),
-			Path: path,
-			Meta: meta,
+			Date:     date,
+			Filename: filepath.Base(path),
+			Dirname:  filepath.Base(filepath.Dir(path)),
+			Path:     path,
+			Meta:     meta,
 		})
 		return nil
 	})
