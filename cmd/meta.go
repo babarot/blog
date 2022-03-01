@@ -131,9 +131,15 @@ func (m *meta) prompt() (blog.Article, error) {
 		article := m.Post.Articles[index]
 		input = strings.Replace(strings.ToLower(input), " ", "", -1)
 		title := strings.Replace(strings.ToLower(article.Title), " ", "", -1)
-		filename := strings.Replace(strings.ToLower(article.File), " ", "", -1)
+		filename := strings.Replace(strings.ToLower(article.Filename), " ", "", -1)
+		dirname := strings.Replace(strings.ToLower(article.Dirname), " ", "", -1)
 		tagMatch := tagsContains(article.Tags, input)
-		return strings.Contains(title, input) || strings.Contains(filename, input) || tagMatch
+		switch filename {
+		case "index.md":
+			return strings.Contains(title, input) || strings.Contains(dirname, input) || tagMatch
+		default:
+			return strings.Contains(title, input) || strings.Contains(filename, input) || tagMatch
+		}
 	}
 
 	prompt := promptui.Select{
