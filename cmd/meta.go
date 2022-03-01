@@ -55,9 +55,9 @@ func (m *meta) init(args []string) error {
 	}
 
 	post.Articles.SortByDate()
-	post.Articles.Filter(func(article blog.Article) bool {
-		return !article.Draft
-	})
+	// post.Articles.Filter(func(article blog.Article) bool {
+	// 	return !article.Draft
+	// })
 
 	m.Post = post
 
