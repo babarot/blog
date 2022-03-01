@@ -7,11 +7,11 @@ before:
 builds:
   - main: .
     binary: blog
-    ldflags: 
+    ldflags:
       - -s -w
-      - -X github.com/b4b4r07/blog/cmd.Version={{.Version}}
-      - -X github.com/b4b4r07/blog/cmd.BuildSHA={{.ShortCommit}}
-      - -X github.com/b4b4r07/blog/cmd.BuildTag={{.Tag}}
+      - -X github.com/b4b4r07/blog/cmd.Version={{ .Version }}
+      - -X github.com/b4b4r07/blog/cmd.BuildTag={{ .Tag }}
+      - -X github.com/b4b4r07/blog/cmd.BuildSHA={{ .ShortCommit }}
     env:
       - CGO_ENABLED=0
 archives:
@@ -26,9 +26,7 @@ archives:
       - goos: windows
         format: zip
 release:
-  github:
-    owner: b4b4r07
-    name: blog
+  prerelease: auto
 changelog:
   sort: asc
   filters:
