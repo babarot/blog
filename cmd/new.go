@@ -4,7 +4,9 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"os"
+	"os/signal"
 	"path/filepath"
 	"strings"
 
@@ -73,18 +75,20 @@ func (c *newCmd) run(args []string) error {
 		Stderr:  ioutil.Discard,
 	}
 
-	if err := hugo.Run(context.Background()); err != nil {
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
+	defer stop()
+
+	if err := hugo.Run(ctx); err != nil {
 		return err
 	}
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
 	go c.runHugoServer(ctx)
+	defer log.Printf("[DEBUG] hugo: stopped server")
 
 	article := blog.Article{
 		Path: filepath.Join(c.RootPath, c.PostDir, dirname, "index.md"),
 	}
 
 	editor := shell.New(c.Editor, article.Path)
-	return editor.Run(context.Background())
+	return editor.Run(ctx)
 }

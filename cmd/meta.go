@@ -6,7 +6,6 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
-	"os/signal"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -65,19 +64,8 @@ func (m *meta) init(args []string) error {
 }
 
 func (m *meta) runHugoServer(ctx context.Context) {
-	sig := make(chan os.Signal, 1)
-	signal.Notify(sig, os.Interrupt)
-	defer signal.Stop(sig)
-
 	ctx, cancel := context.WithCancel(ctx)
-	go func() {
-		select {
-		case <-sig:
-		case <-ctx.Done():
-			log.Printf("[DEBUG] hugo: server finished")
-			cancel()
-		}
-	}()
+	defer cancel()
 
 	hugo := shell.Shell{
 		Command: "hugo",

@@ -2,6 +2,9 @@ package cmd
 
 import (
 	"context"
+	"log"
+	"os"
+	"os/signal"
 	"strings"
 
 	"github.com/b4b4r07/blog/pkg/blog"
@@ -45,31 +48,33 @@ func newEditCmd() *cobra.Command {
 }
 
 func (c *editCmd) run(args []string) error {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
+	defer stop()
+
 	go c.runHugoServer(ctx)
+	defer log.Printf("[DEBUG] hugo: stopped server")
 
 	switch {
 	default:
-		return c.withTitles(args)
+		return c.withTitles(ctx, args)
 	case c.tags:
-		return c.withTags(args)
+		return c.withTags(ctx, args)
 	case c.noTags:
-		return c.withNoTags(args)
+		return c.withNoTags(ctx, args)
 	}
 }
 
-func (c *editCmd) withTitles(args []string) error {
+func (c *editCmd) withTitles(ctx context.Context, args []string) error {
 	article, err := c.prompt()
 	if err != nil {
 		return err
 	}
 
 	editor := shell.New(c.Editor, article.Path)
-	return editor.Run(context.Background())
+	return editor.Run(ctx)
 }
 
-func (c *editCmd) withTags(args []string) error {
+func (c *editCmd) withTags(ctx context.Context, args []string) error {
 	tt := map[string]Tag{}
 	for _, article := range c.Post.Articles {
 		for _, tag := range article.Tags {
@@ -95,10 +100,10 @@ func (c *editCmd) withTags(args []string) error {
 	}
 
 	editor := shell.New(c.Editor, tag.Paths...)
-	return editor.Run(context.Background())
+	return editor.Run(ctx)
 }
 
-func (c *editCmd) withNoTags(args []string) error {
+func (c *editCmd) withNoTags(ctx context.Context, args []string) error {
 	c.Post.Articles.Filter(func(article blog.Article) bool {
 		return len(article.Tags) == 0
 	})
@@ -109,7 +114,7 @@ func (c *editCmd) withNoTags(args []string) error {
 	}
 
 	editor := shell.New(c.Editor, article.Path)
-	return editor.Run(context.Background())
+	return editor.Run(ctx)
 }
 
 type Tag struct {
