@@ -16,8 +16,9 @@ import (
 type editCmd struct {
 	meta
 
-	tags   bool
-	noTags bool
+	tags    bool
+	noTags  bool
+	noDraft bool
 }
 
 // newEditCmd creates a new edit command
@@ -42,7 +43,8 @@ func newEditCmd() *cobra.Command {
 
 	f := editCmd.Flags()
 	f.BoolVarP(&c.tags, "with-tags", "t", false, "with tags")
-	f.BoolVarP(&c.noTags, "no-tags", "", false, "with no  tags")
+	f.BoolVarP(&c.noTags, "no-tags", "", false, "with no tags")
+	f.BoolVarP(&c.noDraft, "no-draft", "", false, "with not in draft")
 
 	return editCmd
 }
@@ -61,6 +63,8 @@ func (c *editCmd) run(args []string) error {
 		return c.withTags(ctx, args)
 	case c.noTags:
 		return c.withNoTags(ctx, args)
+	case c.noDraft:
+		return c.withNoDraft(ctx, args)
 	}
 }
 
@@ -100,6 +104,20 @@ func (c *editCmd) withTags(ctx context.Context, args []string) error {
 	}
 
 	editor := shell.New(c.Editor, tag.Paths...)
+	return editor.Run(ctx)
+}
+
+func (c *editCmd) withNoDraft(ctx context.Context, args []string) error {
+	c.Post.Articles.Filter(func(article blog.Article) bool {
+		return !article.Draft
+	})
+
+	article, err := c.prompt()
+	if err != nil {
+		return err
+	}
+
+	editor := shell.New(c.Editor, article.Path)
 	return editor.Run(ctx)
 }
 
