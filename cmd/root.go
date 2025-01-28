@@ -2,13 +2,24 @@ package cmd
 
 import (
 	"fmt"
-	"log"
+	"io"
+	"log/slog"
 	"os"
+	"path/filepath"
 	"runtime"
+	"sync"
+	"time"
 
-	clilog "github.com/b4b4r07/go-cli-log"
+	"github.com/babarot/blog/internal/env"
+	"github.com/charmbracelet/log"
+	"github.com/rs/xid"
 	"github.com/spf13/cobra"
 )
+
+var runID = sync.OnceValue(func() string {
+	id := xid.New().String()
+	return id
+})
 
 var (
 	// Version is the version number
@@ -31,23 +42,53 @@ func newRootCmd() *cobra.Command {
 		Version:            fmt.Sprintf("%s (%s/%s)", Version, BuildTag, BuildSHA),
 	}
 
-	rootCmd.AddCommand(newEditCmd())
-	rootCmd.AddCommand(newNewCmd())
+	rootCmd.AddCommand(
+		newEditCmd(),
+		newNewCmd(),
+		newLogsCmd(),
+	)
 	return rootCmd
 }
 
-// Execute is
 func Execute() error {
-	clilog.Env = "BLOG_LOG"
-	clilog.Path = "BLOG_LOG_PATH"
-	clilog.SetOutput()
+	logDir := filepath.Dir(env.BLOG_LOG_PATH)
+	if _, err := os.Stat(logDir); os.IsNotExist(err) {
+		err := os.MkdirAll(logDir, 0755)
+		if err != nil {
+			return err
+		}
+	}
 
-	log.Printf("[INFO] pkg version: %s", Version)
-	log.Printf("[INFO] Go runtime version: %s", runtime.Version())
-	log.Printf("[INFO] Build tag/SHA: %s/%s", BuildTag, BuildSHA)
-	log.Printf("[INFO] CLI args: %#v", os.Args)
+	var w io.Writer
+	if file, err := os.OpenFile(env.BLOG_LOG_PATH, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644); err == nil {
+		w = file
+	} else {
+		w = os.Stderr
+	}
 
-	defer log.Printf("[DEBUG] root command execution finished")
+	logger := log.NewWithOptions(os.Stderr, log.Options{
+		ReportCaller:    true,
+		ReportTimestamp: true,
+		TimeFormat:      time.Kitchen,
+		Level:           log.DebugLevel,
+		Formatter: func() log.Formatter {
+			// if strings.ToLower(opt.Debug) == "json" {
+			// 	return log.JSONFormatter
+			// }
+			return log.TextFormatter
+		}(),
+	})
+	logger.SetOutput(w)
+	logger.With("run_id", runID())
+	slog.SetDefault(slog.New(logger))
+
+	defer slog.Debug("root command finished")
+	slog.Debug("root command started",
+		"version", Version,
+		"GoVersion", runtime.Version(),
+		"buildTag/SHA", BuildTag+"/"+BuildSHA,
+		"args", os.Args,
+	)
 
 	return newRootCmd().Execute()
 }
