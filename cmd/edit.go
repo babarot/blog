@@ -7,8 +7,8 @@ import (
 	"os/signal"
 	"strings"
 
-	"github.com/babarot/blog/pkg/blog"
-	"github.com/babarot/blog/pkg/shell"
+	"github.com/babarot/blog/internal/blog"
+	"github.com/babarot/blog/internal/shell"
 	"github.com/manifoldco/promptui"
 	"github.com/spf13/cobra"
 )

@@ -10,8 +10,8 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/babarot/blog/pkg/blog"
-	"github.com/babarot/blog/pkg/shell"
+	"github.com/babarot/blog/internal/blog"
+	"github.com/babarot/blog/internal/shell"
 	"github.com/dustin/go-humanize"
 	"github.com/manifoldco/promptui"
 )
