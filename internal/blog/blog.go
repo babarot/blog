@@ -58,13 +58,25 @@ func (as *Articles) Filter(f func(Article) bool) {
 	*as = articles
 }
 
-type Post struct {
+type Blog struct {
 	Path     string
 	Depth    int
 	Articles Articles
 }
 
-func (p *Post) Walk() error {
+func Posts(root, dir string, depth int) ([]Article, error) {
+	b := Blog{
+		Path:  filepath.Join(root, dir),
+		Depth: depth,
+	}
+	if err := b.Walk(); err != nil {
+		return []Article{}, err
+	}
+	b.Articles.SortByDate()
+	return b.Articles, nil
+}
+
+func (p *Blog) Walk() error {
 	return filepath.Walk(p.Path, func(path string, info os.FileInfo, err error) error {
 		if info == nil {
 			return err

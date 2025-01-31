@@ -4,7 +4,6 @@ import (
 	"errors"
 	"os"
 	"os/exec"
-	"path/filepath"
 
 	"github.com/babarot/blog/internal/blog"
 	"github.com/charmbracelet/bubbles/key"
@@ -34,36 +33,30 @@ type postsLoadedMsg struct {
 	pages []list.Item
 }
 
-func getArticles() (blog.Post, error) {
-	var post blog.Post
+func getArticles() ([]blog.Article, error) {
 	rootPath := os.Getenv("BLOG_ROOT")
 	if rootPath == "" {
-		return post, errors.New("BLOG_ROOT is missing")
+		return []blog.Article{}, errors.New("BLOG_ROOT is missing")
 	}
 	postDir := os.Getenv("BLOG_POST_DIR")
 	if postDir == "" {
-		return post, errors.New("BLOG_POST_DIR is missing")
+		return []blog.Article{}, errors.New("BLOG_POST_DIR is missing")
 	}
-	post = blog.Post{
-		Path:  filepath.Join(rootPath, postDir),
-		Depth: 1,
+	articles, err := blog.Posts(rootPath, postDir, 1)
+	if err != nil {
+		return []blog.Article{}, errors.New("BLOG_POST_DIR is missing")
 	}
-
-	if err := post.Walk(); err != nil {
-		return post, err
-	}
-
-	post.Articles.SortByDate()
-	return post, nil
+	return articles, nil
 }
 
 func (m Model) loadArticles() tea.Msg {
 	var items []list.Item
-	post, err := getArticles()
+
+	articles, err := getArticles()
 	if err != nil {
 		// TODO
 	}
-	m.articles = post.Articles // TODO
+	m.articles = articles // TODO
 	for _, article := range m.articles {
 		if !m.showDraft {
 			if article.Draft {

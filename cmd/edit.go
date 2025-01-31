@@ -77,7 +77,7 @@ func (c *editCmd) run(args []string) error {
 		done <- err
 	}()
 
-	prog := tea.NewProgram(ui.Init(c.config.Post.Articles))
+	prog := tea.NewProgram(ui.Init(c.config.Posts))
 	if _, err := prog.Run(); err != nil {
 		return err
 	}

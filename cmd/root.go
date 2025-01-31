@@ -92,7 +92,7 @@ func newRootCmd() *cobra.Command {
 			c.RootPath = rootPath
 
 			postDir := os.Getenv("BLOG_POST_DIR")
-			if postDir != "" {
+			if postDir == "" {
 				return errors.New("BLOG_POST_DIR is missing")
 			}
 			c.PostDir = postDir
@@ -103,18 +103,21 @@ func newRootCmd() *cobra.Command {
 			}
 			c.Editor = editor
 
-			post := blog.Post{
-				Path:  filepath.Join(c.RootPath, c.PostDir),
-				Depth: 1,
-			}
-
-			err := post.Walk()
+			// blog := blog.Blog{
+			// 	Path:  filepath.Join(c.RootPath, c.PostDir),
+			// 	Depth: 1,
+			// }
+			// err := blog.Walk()
+			// if err != nil {
+			// 	return err
+			// }
+			// blog.Articles.SortByDate()
+			articles, err := blog.Posts(c.RootPath, c.PostDir, 1)
 			if err != nil {
 				return err
 			}
 
-			post.Articles.SortByDate()
-			c.Post = post
+			c.Posts = articles
 			c.LogWriter = w
 
 			ctx := context.WithValue(cmd.Context(), config.Key, c)

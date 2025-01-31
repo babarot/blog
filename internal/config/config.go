@@ -11,9 +11,10 @@ type KeyType string
 const Key KeyType = "config"
 
 type Config struct {
-	Editor    string
-	RootPath  string
-	PostDir   string
-	Post      blog.Post
+	Editor   string
+	RootPath string
+	PostDir  string
+	// Blog      blog.Blog
+	Posts     []blog.Article
 	LogWriter io.Writer
 }
