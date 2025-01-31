@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"log/slog"
-	"os"
 
 	"github.com/babarot/blog/internal/config"
 	"github.com/babarot/blog/internal/shell"
@@ -26,7 +25,7 @@ func newEditCmd() *cobra.Command {
 
 	editCmd := &cobra.Command{
 		Use:                   "edit",
-		Short:                 "Edit existing articles",
+		Short:                 "Edit articles",
 		Aliases:               []string{},
 		DisableFlagsInUseLine: true,
 		SilenceUsage:          true,
@@ -52,11 +51,8 @@ func (c *editCmd) run(args []string) error {
 	defer cancel()
 
 	hugo := shell.Shell{
-		Command: "hugo",
-		Args:    []string{"server", "-D"},
-		Dir:     c.config.RootPath,
-		Env:     map[string]string{},
-		Stdin:   os.Stdin,
+		Command: c.config.Hugo.Command,
+		Dir:     c.config.Hugo.RootDir,
 		Stdout:  c.config.LogWriter,
 		Stderr:  c.config.LogWriter,
 	}
@@ -77,7 +73,11 @@ func (c *editCmd) run(args []string) error {
 		done <- err
 	}()
 
-	prog := tea.NewProgram(ui.Init(c.config.Posts))
+	prog := tea.NewProgram(ui.NewModel(
+		c.config.Editor,
+		c.config.Hugo.RootDir,
+		c.config.Hugo.ContentDir,
+	))
 	if _, err := prog.Run(); err != nil {
 		return err
 	}

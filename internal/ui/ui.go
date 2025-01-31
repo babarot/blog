@@ -1,7 +1,6 @@
 package ui
 
 import (
-	"errors"
 	"os"
 	"os/exec"
 
@@ -9,20 +8,32 @@ import (
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
+	"golang.org/x/exp/slog"
 )
 
 type Model struct {
-	articles  []blog.Article
-	list      list.Model
-	showDraft bool
-	err       error
+	editor     string
+	rootDir    string
+	contentDir string
+	articles   []blog.Article
+	list       list.Model
+	showDraft  bool
+	err        error
 }
 
-func Init(articles []blog.Article) Model {
+type errMsg struct {
+	err error
+}
+
+func NewModel(editor, rootDir, contentDir string) Model {
 	m := Model{
-		articles:  articles,
-		list:      list.New(nil, list.NewDefaultDelegate(), 10, 30),
-		showDraft: false,
+		editor:     editor,
+		rootDir:    rootDir,
+		contentDir: contentDir,
+		articles:   []blog.Article{},
+		list:       list.New(nil, list.NewDefaultDelegate(), 10, 30),
+		showDraft:  false,
+		err:        nil,
 	}
 	return m
 }
@@ -33,29 +44,14 @@ type postsLoadedMsg struct {
 	pages []list.Item
 }
 
-func getArticles() ([]blog.Article, error) {
-	rootPath := os.Getenv("BLOG_ROOT")
-	if rootPath == "" {
-		return []blog.Article{}, errors.New("BLOG_ROOT is missing")
-	}
-	postDir := os.Getenv("BLOG_POST_DIR")
-	if postDir == "" {
-		return []blog.Article{}, errors.New("BLOG_POST_DIR is missing")
-	}
-	articles, err := blog.Posts(rootPath, postDir, 1)
-	if err != nil {
-		return []blog.Article{}, errors.New("BLOG_POST_DIR is missing")
-	}
-	return articles, nil
-}
-
 func (m Model) loadArticles() tea.Msg {
 	var items []list.Item
 
-	articles, err := getArticles()
+	articles, err := blog.Posts(m.rootDir, m.contentDir, 1)
 	if err != nil {
-		// TODO
+		return errMsg{err}
 	}
+
 	m.articles = articles // TODO
 	for _, article := range m.articles {
 		if !m.showDraft {
@@ -113,6 +109,14 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tea.Quit
 		}
 		return m, m.loadArticles
+
+	case errMsg:
+		if msg.err != nil {
+			slog.Warn("got an error", "error", msg.err)
+			m.err = msg.err
+			return m, nil
+		}
+
 	}
 
 	m.list, cmd = m.list.Update(msg)

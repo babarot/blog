@@ -59,11 +59,10 @@ func (c *newCmd) run(args []string) error {
 		return err
 	}
 
-	next := filepath.Join(c.config.PostDir, dirname, "index.md")
+	next := filepath.Join(c.config.Hugo.ContentDir, dirname, "index.md")
 	hugo := shell.Shell{
-		Command: "hugo",
-		Args:    []string{"new", strings.TrimPrefix(next, "content/")},
-		Dir:     c.config.RootPath,
+		Command: "hugo new " + next,
+		Dir:     c.config.Hugo.RootDir,
 		Env:     map[string]string{},
 		Stdin:   os.Stdin,
 		Stdout:  io.Discard,

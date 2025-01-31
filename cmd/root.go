@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"io"
 	"log/slog"
@@ -84,35 +83,25 @@ func newRootCmd() *cobra.Command {
 				"args", os.Args,
 			)
 
-			var c config.Config
-			rootPath := os.Getenv("BLOG_ROOT")
-			if rootPath == "" {
-				return errors.New("BLOG_ROOT is missing")
+			// var c config.Config
+			c, err := config.Parse("")
+			if err != nil {
+				return err
 			}
-			c.RootPath = rootPath
 
-			postDir := os.Getenv("BLOG_POST_DIR")
-			if postDir == "" {
-				return errors.New("BLOG_POST_DIR is missing")
-			}
-			c.PostDir = postDir
-
-			editor := os.Getenv("BLOG_EDITOR")
-			if editor == "" {
-				editor = os.Getenv("EDITOR")
-			}
-			c.Editor = editor
-
-			// blog := blog.Blog{
-			// 	Path:  filepath.Join(c.RootPath, c.PostDir),
-			// 	Depth: 1,
+			// rootPath := os.Getenv("BLOG_ROOT")
+			// if rootPath == "" {
+			// 	return errors.New("BLOG_ROOT is missing")
 			// }
-			// err := blog.Walk()
-			// if err != nil {
-			// 	return err
+			// c.RootPath = rootPath
+			//
+			// postDir := os.Getenv("BLOG_POST_DIR")
+			// if postDir == "" {
+			// 	return errors.New("BLOG_POST_DIR is missing")
 			// }
-			// blog.Articles.SortByDate()
-			articles, err := blog.Posts(c.RootPath, c.PostDir, 1)
+			// c.PostDir = postDir
+
+			articles, err := blog.Posts(c.Hugo.RootDir, c.Hugo.ContentDir, 1)
 			if err != nil {
 				return err
 			}
