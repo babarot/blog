@@ -35,6 +35,10 @@ var (
 	BuildSHA = "unset"
 )
 
+var (
+	ConfigPath string
+)
+
 // newRootCmd returns the root command
 func newRootCmd() *cobra.Command {
 	rootCmd := &cobra.Command{
@@ -83,23 +87,10 @@ func newRootCmd() *cobra.Command {
 				"args", os.Args,
 			)
 
-			// var c config.Config
 			c, err := config.Parse("")
 			if err != nil {
 				return err
 			}
-
-			// rootPath := os.Getenv("BLOG_ROOT")
-			// if rootPath == "" {
-			// 	return errors.New("BLOG_ROOT is missing")
-			// }
-			// c.RootPath = rootPath
-			//
-			// postDir := os.Getenv("BLOG_POST_DIR")
-			// if postDir == "" {
-			// 	return errors.New("BLOG_POST_DIR is missing")
-			// }
-			// c.PostDir = postDir
 
 			articles, err := blog.Posts(c.Hugo.RootDir, c.Hugo.ContentDir, 1)
 			if err != nil {
@@ -121,6 +112,7 @@ func newRootCmd() *cobra.Command {
 		newNewCmd(),
 		newLogsCmd(),
 	)
+	rootCmd.PersistentFlags().StringVarP(&ConfigPath, "config", "c", env.BLOG_CONFIG_PATH, "path to config")
 
 	return rootCmd
 }
