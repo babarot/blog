@@ -3,10 +3,10 @@ package cmd
 import (
 	"context"
 	"errors"
-	"io"
 	"log/slog"
 	"os"
 
+	"github.com/babarot/blog/internal/config"
 	"github.com/babarot/blog/internal/shell"
 	"github.com/babarot/blog/internal/ui"
 	tea "github.com/charmbracelet/bubbletea"
@@ -14,7 +14,7 @@ import (
 )
 
 type editCmd struct {
-	meta
+	config config.Config
 
 	tags    bool
 	noTags  bool
@@ -33,9 +33,8 @@ func newEditCmd() *cobra.Command {
 		SilenceErrors:         true,
 		Args:                  cobra.MaximumNArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if err := c.meta.init(args); err != nil {
-				return err
-			}
+			cfg := cmd.Context().Value(config.Key).(config.Config)
+			c.config = cfg
 			return c.run(args)
 		},
 	}
@@ -53,14 +52,13 @@ func (c *editCmd) run(args []string) error {
 	defer cancel()
 
 	hugo := shell.Shell{
-		Command:     "hugo",
-		Args:        []string{"server", "-D"},
-		Dir:         c.RootPath,
-		Env:         map[string]string{},
-		Stdin:       os.Stdin,
-		Stdout:      io.Discard,
-		Stderr:      io.Discard,
-		StartingMsg: "hugo serving",
+		Command: "hugo",
+		Args:    []string{"server", "-D"},
+		Dir:     c.config.RootPath,
+		Env:     map[string]string{},
+		Stdin:   os.Stdin,
+		Stdout:  c.config.LogWriter,
+		Stderr:  c.config.LogWriter,
 	}
 
 	done := make(chan error)
@@ -79,15 +77,14 @@ func (c *editCmd) run(args []string) error {
 		done <- err
 	}()
 
-	prog := tea.NewProgram(ui.Init(c.Post.Articles))
-	_, err := prog.Run()
-	if err != nil {
+	prog := tea.NewProgram(ui.Init(c.config.Post.Articles))
+	if _, err := prog.Run(); err != nil {
 		return err
 	}
 
-	// stop hugo
+	// stop hugo after UI stopped
 	cancel()
-
+	// wait for stopping hugo
 	if err := <-done; err != nil {
 		slog.Error("error failed")
 		return err

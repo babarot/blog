@@ -4,13 +4,14 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/babarot/blog/internal/config"
 	"github.com/babarot/blog/internal/env"
 	"github.com/nxadm/tail"
 	"github.com/spf13/cobra"
 )
 
 type logsCmd struct {
-	meta
+	config config.Config
 
 	follow bool
 }
@@ -27,6 +28,8 @@ func newLogsCmd() *cobra.Command {
 		SilenceErrors:         true,
 		Args:                  cobra.MaximumNArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			cfg := cmd.Context().Value(config.Key).(config.Config)
+			c.config = cfg
 			return c.run(args)
 		},
 	}

@@ -7,16 +7,16 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/babarot/blog/internal/config"
 	"github.com/babarot/blog/internal/shell"
 	"github.com/manifoldco/promptui"
 	"github.com/spf13/cobra"
 )
 
 type newCmd struct {
-	meta
+	config config.Config
 }
 
-// newNewCmd creates a new new command
 func newNewCmd() *cobra.Command {
 	c := &newCmd{}
 
@@ -29,9 +29,8 @@ func newNewCmd() *cobra.Command {
 		SilenceErrors:         true,
 		Args:                  cobra.MaximumNArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if err := c.meta.init(args); err != nil {
-				return err
-			}
+			cfg := cmd.Context().Value(config.Key).(config.Config)
+			c.config = cfg
 			return c.run(args)
 		},
 	}
@@ -60,11 +59,11 @@ func (c *newCmd) run(args []string) error {
 		return err
 	}
 
-	next := filepath.Join(c.PostDir, dirname, "index.md")
+	next := filepath.Join(c.config.PostDir, dirname, "index.md")
 	hugo := shell.Shell{
 		Command: "hugo",
 		Args:    []string{"new", strings.TrimPrefix(next, "content/")},
-		Dir:     c.RootPath,
+		Dir:     c.config.RootPath,
 		Env:     map[string]string{},
 		Stdin:   os.Stdin,
 		Stdout:  io.Discard,
