@@ -14,20 +14,19 @@ Download the binary from [GitHub Releases][release] and drop it in your `$PATH`.
 - [Darwin / Mac][release]
 - [Linux][release]
 
-## Notes 
+## Todos
 
-This tool idea basically comes from:
-
-- [スムーズに Hugo でブログを書くツール | tellme.tokyo](https://tellme.tokyo/post/2018/10/16/write-blog-smoothly/)
-- [tellme.tokyo/cmd/blog at master · babarot/tellme.tokyo](https://github.com/babarot/tellme.tokyo/tree/master/cmd/blog)
+- [ ] Update readme, add demo
+- [ ] Add `new` command
+  - [ ] asking title (input one line)
+  - [ ] asking date (date picker)
+  - [ ] asking other metadata
+- [ ] add help model, key binds
 
 ## License
 
 [MIT][license]
 
-## Author
-
-babarot
 
 [release]: https://github.com/babarot/blog/releases/latest
 [license]: https://babarot.mit-license.org

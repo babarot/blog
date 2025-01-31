@@ -43,7 +43,10 @@ type Meta struct {
 	Draft       bool     `yaml:"draft"`
 	Author      string   `yaml:"author"`
 	Oldlink     string   `yaml:"oldlink"`
+	Image       string   `yaml:"image"`
 	Tags        []string `yaml:"tags"`
+	Aliases     []string `yaml:"aliases"`
+	Toc         bool     `yaml:"toc"`
 }
 
 type Articles []Article
