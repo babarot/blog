@@ -10,7 +10,6 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-// Article represents the article information
 type Article struct {
 	Meta
 
@@ -20,7 +19,22 @@ type Article struct {
 	Path     string
 }
 
-// Meta represents article contents
+func (p Article) Description() string {
+	return p.Date.Format("2006-01-02")
+}
+
+func (p Article) Title() string {
+	var suffix string
+	if p.Meta.Draft {
+		suffix = " ::Draft"
+	}
+	return p.Meta.Title + suffix
+}
+
+func (p Article) FilterValue() string {
+	return p.Filename
+}
+
 type Meta struct {
 	Title       string   `yaml:"title"`
 	Date        string   `yaml:"date"`
@@ -32,7 +46,6 @@ type Meta struct {
 	Tags        []string `yaml:"tags"`
 }
 
-// Articles is a collection of articles
 type Articles []Article
 
 func (as *Articles) Filter(f func(Article) bool) {
@@ -45,14 +58,12 @@ func (as *Articles) Filter(f func(Article) bool) {
 	*as = articles
 }
 
-// Post represents
 type Post struct {
 	Path     string
 	Depth    int
 	Articles Articles
 }
 
-// Walk walks post directory and search markdow files
 func (p *Post) Walk() error {
 	return filepath.Walk(p.Path, func(path string, info os.FileInfo, err error) error {
 		if info == nil {
@@ -87,7 +98,6 @@ func (p *Post) Walk() error {
 	})
 }
 
-// SortByDate sorts by the date of the article
 func (as *Articles) SortByDate() {
 	sort.Slice(*as, func(i, j int) bool {
 		return (*as)[i].Date.After((*as)[j].Date)

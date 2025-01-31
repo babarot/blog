@@ -1,16 +1,12 @@
 package cmd
 
 import (
-	"context"
 	"fmt"
-	"io/ioutil"
-	"log"
+	"io"
 	"os"
-	"os/signal"
 	"path/filepath"
 	"strings"
 
-	"github.com/babarot/blog/internal/blog"
 	"github.com/babarot/blog/internal/shell"
 	"github.com/manifoldco/promptui"
 	"github.com/spf13/cobra"
@@ -71,24 +67,26 @@ func (c *newCmd) run(args []string) error {
 		Dir:     c.RootPath,
 		Env:     map[string]string{},
 		Stdin:   os.Stdin,
-		Stdout:  ioutil.Discard,
-		Stderr:  ioutil.Discard,
+		Stdout:  io.Discard,
+		Stderr:  io.Discard,
 	}
+	_ = hugo
 
-	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
-	defer stop()
-
-	if err := hugo.Run(ctx); err != nil {
-		return err
-	}
-
-	go c.runHugoServer(ctx)
-	defer log.Printf("[DEBUG] hugo: stopped server")
-
-	article := blog.Article{
-		Path: filepath.Join(c.RootPath, c.PostDir, dirname, "index.md"),
-	}
-
-	editor := shell.New(c.Editor, article.Path)
-	return editor.Run(ctx)
+	// ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
+	// defer stop()
+	//
+	// if err := hugo.Run(ctx); err != nil {
+	// 	return err
+	// }
+	//
+	// go c.runHugoServer(ctx)
+	// defer log.Printf("[DEBUG] hugo: stopped server")
+	//
+	// article := blog.Article{
+	// 	Path: filepath.Join(c.RootPath, c.PostDir, dirname, "index.md"),
+	// }
+	//
+	// editor := shell.New(c.Editor, article.Path)
+	// return editor.Run(ctx)
+	return nil
 }

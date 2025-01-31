@@ -4,12 +4,14 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"log/slog"
 	"os"
 	"os/exec"
 	"runtime"
+
+	"github.com/babarot/blog/internal/env"
 )
 
-// New returns Shell instance
 func New(command string, args ...string) Shell {
 	return Shell{
 		Stdin:   os.Stdin,
@@ -21,7 +23,6 @@ func New(command string, args ...string) Shell {
 	}
 }
 
-// Shell represents shell command
 type Shell struct {
 	Stdin   io.Reader
 	Stdout  io.Writer
@@ -30,10 +31,15 @@ type Shell struct {
 	Command string
 	Args    []string
 	Dir     string
+
+	StartingMsg string
 }
 
-// Run runs shell command
 func (s Shell) Run(ctx context.Context) error {
+	if msg := s.StartingMsg; msg != "" {
+		slog.Info(s.StartingMsg)
+	}
+
 	command := s.Command
 	if _, err := exec.LookPath(command); err != nil {
 		return err
@@ -47,17 +53,20 @@ func (s Shell) Run(ctx context.Context) error {
 	} else {
 		cmd = exec.CommandContext(ctx, "sh", "-c", command)
 	}
-	cmd.Stderr = s.Stderr
-	cmd.Stdout = s.Stdout
+	file, err := os.OpenFile(env.BLOG_LOG_PATH, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err == nil {
+		cmd.Stderr = file
+		cmd.Stdout = file
+	}
 	cmd.Stdin = s.Stdin
 	cmd.Dir = s.Dir
 	for k, v := range s.Env {
 		cmd.Env = append(os.Environ(), fmt.Sprintf("%s=%s", k, v))
 	}
-	return cmd.Run()
-}
+	cmd.Cancel = func() error {
+		slog.Debug("cancel recieved")
+		return cmd.Process.Signal(os.Interrupt)
+	}
 
-// RunCommand runs command with given arguments
-func RunCommand(command string, args ...string) error {
-	return New(command, args...).Run(context.Background())
+	return cmd.Run()
 }

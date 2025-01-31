@@ -2,14 +2,14 @@ package cmd
 
 import (
 	"context"
-	"log"
+	"errors"
+	"io"
+	"log/slog"
 	"os"
-	"os/signal"
-	"strings"
 
-	"github.com/babarot/blog/internal/blog"
 	"github.com/babarot/blog/internal/shell"
-	"github.com/manifoldco/promptui"
+	"github.com/babarot/blog/internal/ui"
+	tea "github.com/charmbracelet/bubbletea"
 	"github.com/spf13/cobra"
 )
 
@@ -21,7 +21,6 @@ type editCmd struct {
 	noDraft bool
 }
 
-// newEditCmd creates a new edit command
 func newEditCmd() *cobra.Command {
 	c := &editCmd{}
 
@@ -50,128 +49,49 @@ func newEditCmd() *cobra.Command {
 }
 
 func (c *editCmd) run(args []string) error {
-	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
-	defer stop()
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
-	go c.runHugoServer(ctx)
-	defer log.Printf("[DEBUG] hugo: stopped server")
-
-	switch {
-	default:
-		return c.withTitles(ctx, args)
-	case c.tags:
-		return c.withTags(ctx, args)
-	case c.noTags:
-		return c.withNoTags(ctx, args)
-	case c.noDraft:
-		return c.withNoDraft(ctx, args)
-	}
-}
-
-func (c *editCmd) withTitles(ctx context.Context, args []string) error {
-	article, err := c.prompt()
-	if err != nil {
-		return err
+	hugo := shell.Shell{
+		Command:     "hugo",
+		Args:        []string{"server", "-D"},
+		Dir:         c.RootPath,
+		Env:         map[string]string{},
+		Stdin:       os.Stdin,
+		Stdout:      io.Discard,
+		Stderr:      io.Discard,
+		StartingMsg: "hugo serving",
 	}
 
-	editor := shell.New(c.Editor, article.Path)
-	return editor.Run(ctx)
-}
-
-func (c *editCmd) withTags(ctx context.Context, args []string) error {
-	tt := map[string]Tag{}
-	for _, article := range c.Post.Articles {
-		for _, tag := range article.Tags {
-			t := tt[tag]
-			t.Titles = append(t.Titles, article.Title)
-			t.Paths = append(t.Paths, article.Path)
-			tt[tag] = t
+	done := make(chan error)
+	go func() {
+		err := hugo.Run(ctx)
+		if err != nil {
+			if errors.Is(err, context.Canceled) {
+				slog.Debug("hugo canceled")
+				done <- nil
+				return
+			}
+			slog.Error("hugo failed", "error", err)
+		} else {
+			slog.Debug("hugo finished")
 		}
-	}
+		done <- err
+	}()
 
-	var tags []Tag
-	for name, tag := range tt {
-		tags = append(tags, Tag{
-			Name:   name,
-			Titles: tag.Titles,
-			Paths:  tag.Paths,
-		})
-	}
-
-	tag, err := selectTags(tags)
+	prog := tea.NewProgram(ui.Init(c.Post.Articles))
+	_, err := prog.Run()
 	if err != nil {
 		return err
 	}
 
-	editor := shell.New(c.Editor, tag.Paths...)
-	return editor.Run(ctx)
-}
+	// stop hugo
+	cancel()
 
-func (c *editCmd) withNoDraft(ctx context.Context, args []string) error {
-	c.Post.Articles.Filter(func(article blog.Article) bool {
-		return !article.Draft
-	})
-
-	article, err := c.prompt()
-	if err != nil {
+	if err := <-done; err != nil {
+		slog.Error("error failed")
 		return err
 	}
 
-	editor := shell.New(c.Editor, article.Path)
-	return editor.Run(ctx)
-}
-
-func (c *editCmd) withNoTags(ctx context.Context, args []string) error {
-	c.Post.Articles.Filter(func(article blog.Article) bool {
-		return len(article.Tags) == 0
-	})
-
-	article, err := c.prompt()
-	if err != nil {
-		return err
-	}
-
-	editor := shell.New(c.Editor, article.Path)
-	return editor.Run(ctx)
-}
-
-type Tag struct {
-	Name   string
-	Titles []string
-	Paths  []string
-}
-
-func selectTags(tags []Tag) (Tag, error) {
-	templates := &promptui.SelectTemplates{
-		Label:    "{{ .Name }}",
-		Active:   promptui.IconSelect + " {{ .Name | cyan }}",
-		Inactive: "  {{ .Name | faint }}",
-		Selected: promptui.IconGood + " {{ .Name }}",
-		Details: `
-{{ "Titles:" | faint }}
-    {{ .Titles | len | faint }} {{ "article(s)" | faint }}
-    {{- range .Titles }}
-    - {{ . }}
-    {{- end }}
-`,
-	}
-
-	searcher := func(input string, index int) bool {
-		tag := strings.Replace(strings.ToLower(tags[index].Name), " ", "", -1)
-		input = strings.Replace(strings.ToLower(input), " ", "", -1)
-		return strings.Contains(tag, input)
-	}
-
-	prompt := promptui.Select{
-		Label:             "Select:",
-		Items:             tags,
-		Size:              10,
-		Templates:         templates,
-		Searcher:          searcher,
-		StartInSearchMode: true,
-		HideSelected:      true,
-	}
-
-	i, _, err := prompt.Run()
-	return tags[i], err
+	return nil
 }
