@@ -11,6 +11,7 @@ import (
 )
 
 type Model struct {
+	keys       AdditionalKeys
 	editor     string
 	rootDir    string
 	contentDir string
@@ -26,12 +27,17 @@ type errMsg struct {
 }
 
 func NewModel(editor, rootDir, contentDir string) Model {
+	keys := AdditionalKeyMap()
+	l := list.NewDefaultDelegate()
+	l.ShortHelpFunc = keys.ShortHelp
+	l.FullHelpFunc = keys.FullHelp
 	m := Model{
+		keys:       keys,
 		editor:     editor,
 		rootDir:    rootDir,
 		contentDir: contentDir,
 		articles:   []blog.Article{},
-		list:       list.New(nil, list.NewDefaultDelegate(), 10, 30),
+		list:       list.New(nil, l, 10, 30),
 		toast:      NewToast(),
 		showDraft:  false,
 		err:        nil,
@@ -74,15 +80,6 @@ func (m Model) Init() tea.Cmd {
 	)
 }
 
-var KeyDraft = key.NewBinding(
-	key.WithKeys("d"),
-	key.WithHelp("d", "toggle draft"),
-)
-var Enter = key.NewBinding(
-	key.WithKeys("enter"),
-	key.WithHelp("enter", "edit"),
-)
-
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var (
 		cmds []tea.Cmd
@@ -105,11 +102,11 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case tea.KeyMsg:
 		switch {
-		case key.Matches(msg, KeyDraft):
+		case key.Matches(msg, m.keys.Draft):
 			m.showDraft = !m.showDraft
 			return m, m.loadArticles
 
-		case key.Matches(msg, Enter):
+		case key.Matches(msg, m.keys.Edit):
 			if m.list.FilterState() != list.Filtering {
 				if selected := m.list.SelectedItem(); selected != nil {
 					article := selected.(blog.Article)

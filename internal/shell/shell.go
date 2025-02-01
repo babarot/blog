@@ -48,6 +48,15 @@ func (s Shell) Run(ctx context.Context) error {
 	return cmd.Run()
 }
 
+func RunCommand(command string) error {
+	return Shell{
+		Command: command,
+		Stdin:   os.Stdin,
+		Stdout:  os.Stdout,
+		Stderr:  os.Stderr,
+	}.Run(context.Background())
+}
+
 func ExpandHome(input string) (string, error) {
 	result := input
 
