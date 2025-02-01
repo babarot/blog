@@ -2,9 +2,12 @@ package blog
 
 import (
 	"bufio"
+	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 	"sort"
+	"strings"
 	"time"
 
 	"gopkg.in/yaml.v2"
@@ -19,8 +22,17 @@ type Article struct {
 	Path     string
 }
 
+func (p Article) Slug() string {
+	slug := p.Dirname
+	if regexp.MustCompile(`^20\d{2}$`).MatchString(slug) {
+		slug = strings.TrimSuffix(p.Filename, filepath.Ext(p.Filename))
+	}
+	return slug
+}
+
 func (p Article) Description() string {
-	return p.Date.Format("2006-01-02")
+	const bullet = "•"
+	return fmt.Sprintf("%s %s %s", p.Date.Format("2006-01-02"), bullet, p.Slug())
 }
 
 func (p Article) Title() string {
@@ -32,7 +44,7 @@ func (p Article) Title() string {
 }
 
 func (p Article) FilterValue() string {
-	return p.Filename
+	return p.Meta.Title + p.Slug()
 }
 
 type Meta struct {
