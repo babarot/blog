@@ -61,33 +61,21 @@ type Meta struct {
 	Toc         bool     `yaml:"toc"`
 }
 
-type Articles []Article
-
-func (as *Articles) Filter(f func(Article) bool) {
-	articles := make(Articles, 0)
-	for _, a := range *as {
-		if f(a) {
-			articles = append(articles, a)
-		}
-	}
-	*as = articles
-}
-
 type Blog struct {
 	Path     string
-	Depth    int
-	Articles Articles
+	Articles []Article
 }
 
-func Posts(root, dir string, depth int) ([]Article, error) {
+func Posts(root, dir string) ([]Article, error) {
 	b := Blog{
-		Path:  filepath.Join(root, dir),
-		Depth: depth,
+		Path: filepath.Join(root, dir),
 	}
 	if err := b.Walk(); err != nil {
 		return []Article{}, err
 	}
-	b.Articles.SortByDate()
+	sort.Slice(b.Articles, func(i, j int) bool {
+		return b.Articles[i].Date.After(b.Articles[j].Date)
+	})
 	return b.Articles, nil
 }
 
@@ -122,12 +110,6 @@ func (p *Blog) Walk() error {
 			Meta:     meta,
 		})
 		return nil
-	})
-}
-
-func (as *Articles) SortByDate() {
-	sort.Slice(*as, func(i, j int) bool {
-		return (*as)[i].Date.After((*as)[j].Date)
 	})
 }
 

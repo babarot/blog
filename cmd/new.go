@@ -30,6 +30,7 @@ func newNewCmd() *cobra.Command {
 		Use:                   "new",
 		Short:                 "Create new article",
 		Aliases:               []string{},
+		GroupID:               "main",
 		DisableFlagsInUseLine: true,
 		SilenceUsage:          true,
 		SilenceErrors:         true,

@@ -56,9 +56,8 @@ func (m Model) loadArticles() tea.Msg {
 	var items []list.Item
 	var err error
 
-	m.articles, err = blog.Posts(m.rootDir, m.contentDir, 1)
+	m.articles, err = blog.Posts(m.rootDir, m.contentDir)
 	if err != nil {
-		// return errMsg{err}
 		return articlesLoadedMsg{err: err}
 	}
 
@@ -110,6 +109,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if m.list.FilterState() != list.Filtering {
 				if selected := m.list.SelectedItem(); selected != nil {
 					article := selected.(blog.Article)
+					slog.Debug("edit", "file", article.Meta.Title)
 					return m, m.openEditor(article.Path)
 				}
 			}

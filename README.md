@@ -1,11 +1,10 @@
-# blog
+# blog—Makes writing blogs easier!
 
 <p align="center">
   <img src="docs/v2.png" width="600">
 </p>
 
-This is a CLI tool that makes writing blog posts easier.  
-It is primarily designed for publishing on [tellme.tokyo](https://tellme.tokyo).
+This is a CLI tool that makes writing blog posts easier. It is primarily designed for publishing on [tellme.tokyo](https://tellme.tokyo).
 
 When you run this app with the `edit` command, you can browse and select existing articles using a user-friendly UI. Internally, this app runs a [Hugo](https://gohugo.io/) server as a background process, allowing you to access [http://localhost:1313](http://localhost:1313) while writing—without needing to start the Hugo server manually!
 

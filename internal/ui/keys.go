@@ -9,8 +9,8 @@ type AdditionalKeys struct {
 
 func AdditionalKeyMap() AdditionalKeys {
 	return AdditionalKeys{
-		Edit:  key.NewBinding(key.WithKeys("enter", "e"), key.WithHelp("enter/e", "edit")),
-		Draft: key.NewBinding(key.WithKeys("d"), key.WithHelp("d", "toggle draft")),
+		Edit:  key.NewBinding(key.WithKeys("enter"), key.WithHelp("↵", "edit")),
+		Draft: key.NewBinding(key.WithKeys("d"), key.WithHelp("d", "draft")),
 	}
 }
 

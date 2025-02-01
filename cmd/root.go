@@ -25,18 +25,13 @@ var runID = sync.OnceValue(func() string {
 })
 
 var (
-	// Version is the version number
-	Version = "unset"
-
-	// BuildTag set during build to git tag, if any
-	BuildTag = "unset"
-
-	// BuildSHA is the git sha set during build
-	BuildSHA = "unset"
+	Version  = "unset"
+	Revision = "unset"
+	BuiltAt  = "unset"
 )
 
 var (
-	ConfigPath string
+	configPath string
 )
 
 // newRootCmd returns the root command
@@ -46,7 +41,7 @@ func newRootCmd() *cobra.Command {
 		Short:              "A CLI tool that makes writing blogs easier",
 		SilenceErrors:      true,
 		DisableSuggestions: false,
-		Version:            fmt.Sprintf("%s (%s/%s)", Version, BuildTag, BuildSHA),
+		Version:            fmt.Sprintf("%s (%s/%s)", Version, Revision, BuiltAt),
 		PersistentPreRunE: func(cmd *cobra.Command, _ []string) error {
 			logDir := filepath.Dir(env.BLOG_LOG_PATH)
 			if _, err := os.Stat(logDir); os.IsNotExist(err) {
@@ -69,9 +64,6 @@ func newRootCmd() *cobra.Command {
 				TimeFormat:      time.Kitchen,
 				Level:           log.DebugLevel,
 				Formatter: func() log.Formatter {
-					// if strings.ToLower(opt.Debug) == "json" {
-					// 	return log.JSONFormatter
-					// }
 					return log.TextFormatter
 				}(),
 			})
@@ -82,17 +74,17 @@ func newRootCmd() *cobra.Command {
 			defer slog.Debug("root command finished")
 			slog.Debug("root command started",
 				"version", Version,
-				"GoVersion", runtime.Version(),
-				"buildTag/SHA", BuildTag+"/"+BuildSHA,
+				"revision", Revision,
+				"go", runtime.Version(),
 				"args", os.Args,
 			)
 
-			c, err := config.Parse("")
+			c, err := config.Parse(configPath)
 			if err != nil {
 				return err
 			}
 
-			articles, err := blog.Posts(c.Hugo.RootDir, c.Hugo.ContentDir, 1)
+			articles, err := blog.Posts(c.Hugo.RootDir, c.Hugo.ContentDir)
 			if err != nil {
 				return err
 			}
@@ -107,12 +99,18 @@ func newRootCmd() *cobra.Command {
 		},
 	}
 
+	rootCmd.AddGroup(&cobra.Group{ID: "main", Title: "Blog commands"})
+	rootCmd.AddGroup(&cobra.Group{ID: "sub", Title: "Helper commands"})
+
+	rootCmd.SetHelpCommandGroupID("sub")
+	rootCmd.SetCompletionCommandGroupID("sub")
+
 	rootCmd.AddCommand(
 		newEditCmd(),
 		newNewCmd(),
 		newLogsCmd(),
 	)
-	rootCmd.PersistentFlags().StringVarP(&ConfigPath, "config", "c", env.BLOG_CONFIG_PATH, "path to config")
+	rootCmd.PersistentFlags().StringVarP(&configPath, "config", "c", env.BLOG_CONFIG_PATH, "path to config")
 
 	return rootCmd
 }

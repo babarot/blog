@@ -27,6 +27,7 @@ func newEditCmd() *cobra.Command {
 		Use:                   "edit",
 		Short:                 "Edit articles",
 		Aliases:               []string{},
+		GroupID:               "main",
 		DisableFlagsInUseLine: true,
 		SilenceUsage:          true,
 		SilenceErrors:         true,
