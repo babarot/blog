@@ -34,8 +34,8 @@ github:
   owner: babarot
   repo: blog
   release:
-    name: gomi
-    tag: v0.2.0
+    name: blog
+    tag: v0.1.10
   command:
     link:
     - from: blog
