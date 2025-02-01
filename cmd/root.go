@@ -43,7 +43,7 @@ var (
 func newRootCmd() *cobra.Command {
 	rootCmd := &cobra.Command{
 		Use:                "blog",
-		Short:              "A CLI tool for editing blog built by hugo etc",
+		Short:              "A CLI tool that makes writing blogs easier",
 		SilenceErrors:      true,
 		DisableSuggestions: false,
 		Version:            fmt.Sprintf("%s (%s/%s)", Version, BuildTag, BuildSHA),
