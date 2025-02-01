@@ -1,33 +1,49 @@
-blog
-====
+# blog
 
 <p align="center">
-  <img src="screenshot.png" width="600">
+  <img src="docs/v2.png" width="600">
 </p>
 
-This tool is mainly for writing [tellme.tokyo](https://github.com/babarot/tellme.tokyo) blog. If you run this app with `edit` command, you can choise the exisiting articles with cool [prompt](https://github.com/manifoldco/promptui). Internally, this app makes hugo server run as background process. So it makes you easy to access localhost:1313 while writing your post without calling hugo server separately!
+This is a CLI tool that makes writing blog posts easier.  
+It is primarily designed for publishing on [tellme.tokyo](https://tellme.tokyo).
+
+When you run this app with the `edit` command, you can browse and select existing articles using a user-friendly UI. Internally, this app runs a [Hugo](https://gohugo.io/) server as a background process, allowing you to access [http://localhost:1313](http://localhost:1313) while writing—without needing to start the Hugo server manually!
+
+## Usage
+
+To edit an existing blog post:
+
+```console
+blog edit
+```
+
+To create a new post:
+
+```console
+blog new
+```
 
 ## Installation
 
-Download the binary from [GitHub Releases][release] and drop it in your `$PATH`.
+Using [afx](https://github.com/babarot/afx):
 
-- [Darwin / Mac][release]
-- [Linux][release]
-
-## Notes 
-
-This tool idea basically comes from:
-
-- [スムーズに Hugo でブログを書くツール | tellme.tokyo](https://tellme.tokyo/post/2018/10/16/write-blog-smoothly/)
-- [tellme.tokyo/cmd/blog at master · babarot/tellme.tokyo](https://github.com/babarot/tellme.tokyo/tree/master/cmd/blog)
+```yaml
+github:
+- name: babarot/blog
+  description: A tool to simplify blog writing.
+  owner: babarot
+  repo: blog
+  release:
+    name: gomi
+    tag: v0.2.0
+  command:
+    link:
+    - from: blog
+```
+```bash
+afx install
+```
 
 ## License
 
-[MIT][license]
-
-## Author
-
-babarot
-
-[release]: https://github.com/babarot/blog/releases/latest
-[license]: https://babarot.mit-license.org
+MIT

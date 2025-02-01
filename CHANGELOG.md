@@ -1,7 +1,5 @@
 # Changelog
 
-## [v0.1.8](https://github.com/babarot/blog/compare/v0.1.9...v0.1.8) - 2025-01-28
-
 ## [v0.1.9](https://github.com/babarot/blog/compare/v0.1.7...v0.1.9) - 2023-03-25
 - Add no-draft flag to edit command by @babarot in https://github.com/babarot/blog/pull/5
 

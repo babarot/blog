@@ -1,14 +1,28 @@
 package cmd
 
 import (
+	"context"
 	"fmt"
-	"log"
+	"io"
+	"log/slog"
 	"os"
+	"path/filepath"
 	"runtime"
+	"sync"
+	"time"
 
-	clilog "github.com/b4b4r07/go-cli-log"
+	"github.com/babarot/blog/internal/blog"
+	"github.com/babarot/blog/internal/config"
+	"github.com/babarot/blog/internal/env"
+	"github.com/charmbracelet/log"
+	"github.com/rs/xid"
 	"github.com/spf13/cobra"
 )
+
+var runID = sync.OnceValue(func() string {
+	id := xid.New().String()
+	return id
+})
 
 var (
 	// Version is the version number
@@ -21,33 +35,88 @@ var (
 	BuildSHA = "unset"
 )
 
+var (
+	ConfigPath string
+)
+
 // newRootCmd returns the root command
 func newRootCmd() *cobra.Command {
 	rootCmd := &cobra.Command{
 		Use:                "blog",
-		Short:              "A CLI tool for editing blog built by hugo etc",
+		Short:              "A CLI tool that makes writing blogs easier",
 		SilenceErrors:      true,
 		DisableSuggestions: false,
 		Version:            fmt.Sprintf("%s (%s/%s)", Version, BuildTag, BuildSHA),
+		PersistentPreRunE: func(cmd *cobra.Command, _ []string) error {
+			logDir := filepath.Dir(env.BLOG_LOG_PATH)
+			if _, err := os.Stat(logDir); os.IsNotExist(err) {
+				err := os.MkdirAll(logDir, 0755)
+				if err != nil {
+					return err
+				}
+			}
+
+			var w io.Writer
+			if file, err := os.OpenFile(env.BLOG_LOG_PATH, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644); err == nil {
+				w = file
+			} else {
+				w = os.Stderr
+			}
+
+			logger := log.NewWithOptions(os.Stderr, log.Options{
+				ReportCaller:    true,
+				ReportTimestamp: true,
+				TimeFormat:      time.Kitchen,
+				Level:           log.DebugLevel,
+				Formatter: func() log.Formatter {
+					// if strings.ToLower(opt.Debug) == "json" {
+					// 	return log.JSONFormatter
+					// }
+					return log.TextFormatter
+				}(),
+			})
+			logger.SetOutput(w)
+			logger.With("run_id", runID())
+			slog.SetDefault(slog.New(logger))
+
+			defer slog.Debug("root command finished")
+			slog.Debug("root command started",
+				"version", Version,
+				"GoVersion", runtime.Version(),
+				"buildTag/SHA", BuildTag+"/"+BuildSHA,
+				"args", os.Args,
+			)
+
+			c, err := config.Parse("")
+			if err != nil {
+				return err
+			}
+
+			articles, err := blog.Posts(c.Hugo.RootDir, c.Hugo.ContentDir, 1)
+			if err != nil {
+				return err
+			}
+
+			c.Posts = articles
+			c.LogWriter = w
+
+			ctx := context.WithValue(cmd.Context(), config.Key, c)
+			cmd.SetContext(ctx)
+
+			return nil
+		},
 	}
 
-	rootCmd.AddCommand(newEditCmd())
-	rootCmd.AddCommand(newNewCmd())
+	rootCmd.AddCommand(
+		newEditCmd(),
+		newNewCmd(),
+		newLogsCmd(),
+	)
+	rootCmd.PersistentFlags().StringVarP(&ConfigPath, "config", "c", env.BLOG_CONFIG_PATH, "path to config")
+
 	return rootCmd
 }
 
-// Execute is
 func Execute() error {
-	clilog.Env = "BLOG_LOG"
-	clilog.Path = "BLOG_LOG_PATH"
-	clilog.SetOutput()
-
-	log.Printf("[INFO] pkg version: %s", Version)
-	log.Printf("[INFO] Go runtime version: %s", runtime.Version())
-	log.Printf("[INFO] Build tag/SHA: %s/%s", BuildTag, BuildSHA)
-	log.Printf("[INFO] CLI args: %#v", os.Args)
-
-	defer log.Printf("[DEBUG] root command execution finished")
-
 	return newRootCmd().Execute()
 }
