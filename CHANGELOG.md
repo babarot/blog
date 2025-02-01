@@ -1,5 +1,9 @@
 # Changelog
 
+## [v0.1.10](https://github.com/babarot/blog/compare/v0.1.9...v0.1.10) - 2025-02-01
+### New Features
+- Update UI by @babarot in https://github.com/babarot/blog/pull/7
+
 ## [v0.1.9](https://github.com/babarot/blog/compare/v0.1.7...v0.1.9) - 2023-03-25
 - Add no-draft flag to edit command by @babarot in https://github.com/babarot/blog/pull/5
 
