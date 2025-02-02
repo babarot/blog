@@ -1,7 +1,7 @@
 BINARY_NAME := blog
 BIN_DIR := /usr/local/bin
 SRCS := $(shell git ls-files '*.go')
-LDFLAGS := "-X github.com/babarot/blog/cmd.version=$(shell git describe --tags --abbrev=0 --always) -X github.com/babarot/blog/cmd.revision=$(shell git rev-parse --verify --short HEAD) -X github.com/babarot/blog/cmd.buildDate=$(shell date "+%Y-%m-%d")"
+LDFLAGS := "-X github.com/babarot/blog/internal/cmd.version=$(shell git describe --tags --abbrev=0 --always) -X github.com/babarot/blog/internal/cmd.revision=$(shell git rev-parse --verify --short HEAD) -X github.com/babarot/blog/internal/cmd.buildDate=$(shell date "+%Y-%m-%d")"
 
 all: build
 
