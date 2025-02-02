@@ -76,6 +76,7 @@ func (m Model) loadArticles() tea.Msg {
 
 func (m Model) Init() tea.Cmd {
 	return tea.Batch(
+		ShowToast("hugo server is running in background!", ToastInfo),
 		m.loadArticles,
 	)
 }

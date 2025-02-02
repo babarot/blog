@@ -87,7 +87,7 @@ func (c *editCmd) run(args []string) error {
 	cancel()
 	// wait for stopping hugo
 	if err := <-done; err != nil {
-		slog.Error("error failed")
+		slog.Error("error failed", "error", err)
 		return err
 	}
 
