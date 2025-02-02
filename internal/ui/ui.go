@@ -3,12 +3,14 @@ package ui
 import (
 	"log/slog"
 	"os/exec"
+	"time"
 
 	"github.com/babarot/blog/internal/blog"
 	"github.com/babarot/blog/internal/config"
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 )
 
 type Model struct {
@@ -37,8 +39,17 @@ func Init(c config.Config) Model {
 		Draft: key.NewBinding(key.WithKeys("d"), key.WithHelp("d", "draft")),
 	}
 	l := list.New(nil, list.NewDefaultDelegate(), 10, 30)
+
 	l.SetShowTitle(false)
+	l.Title = c.Site.Name
+	l.Styles.TitleBar = lipgloss.NewStyle().Padding(0, 0, 1, 2)
+	l.Styles.Title = lipgloss.NewStyle().
+		Background(lipgloss.Color("#ee6ff8")). // #ee6ff8, #ad58b4, (#a743fd, #22222e, #706f8e)
+		Foreground(lipgloss.Color("#22222e")).
+		Padding(0, 1)
 	l.SetShowStatusBar(true)
+	l.StatusMessageLifetime = time.Second * 3
+
 	l.DisableQuitKeybindings()
 	l.AdditionalFullHelpKeys = func() []key.Binding { return []key.Binding{keymap.Edit, keymap.Draft} }
 	l.AdditionalShortHelpKeys = func() []key.Binding { return []key.Binding{keymap.Edit, keymap.Draft} }
@@ -57,7 +68,7 @@ func Init(c config.Config) Model {
 
 func (m Model) Init() tea.Cmd {
 	return tea.Batch(
-		ShowToast("hugo server is running in background!", ToastInfo),
+		ShowToast("hugo server is running in background!", ToastNotice),
 		m.loadArticles,
 	)
 }
@@ -87,7 +98,13 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		case key.Matches(msg, m.keymap.Draft):
 			m.showDraft = !m.showDraft
-			return m, m.loadArticles
+			msg := "hide draft posts!"
+			if m.showDraft {
+				msg = "show draft posts!"
+			}
+			cmds = append(cmds, m.list.NewStatusMessage(msg), ShowToast(msg, ToastDebug), m.loadArticles)
+			// do not call m.list.Update
+			return m, tea.Batch(cmds...)
 
 		case key.Matches(msg, m.keymap.Edit):
 			if m.list.FilterState() != list.Filtering {
@@ -106,7 +123,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.err = msg.err
 			return m, tea.Quit
 		}
-		return m, m.loadArticles
+		cmds = append(cmds, m.loadArticles)
 
 	case errMsg:
 		if msg.error != nil {

@@ -14,11 +14,15 @@ var (
 	PrimaryGrayColor   = lipgloss.Color("#767676")
 	SecondaryGrayColor = lipgloss.Color("#3a3b5b")
 	AccentColor        = lipgloss.Color("#a7cb77")
+	DebugColor         = lipgloss.Color("#5c5c5c")
+	BaseColor          = lipgloss.Color("#853d8a") // #ad58b4
 )
 
 var (
-	infoStatusStyle = lipgloss.NewStyle().Foreground(PrimaryColor)
-	warnStatusStyle = lipgloss.NewStyle().Foreground(TertiaryColor)
+	infoStatusStyle   = lipgloss.NewStyle().Foreground(PrimaryColor)
+	warnStatusStyle   = lipgloss.NewStyle().Foreground(TertiaryColor)
+	debugStatusStyle  = lipgloss.NewStyle().Foreground(DebugColor)
+	noticeStatusStyle = lipgloss.NewStyle().Foreground(BaseColor)
 )
 
 type ShowToastMsg struct {
@@ -29,6 +33,8 @@ type ShowToastMsg struct {
 const (
 	ToastInfo = iota
 	ToastWarn
+	ToastNotice
+	ToastDebug
 )
 
 type ToastType = int
@@ -58,9 +64,13 @@ func (m *ToastModel) View() string {
 	}
 	switch m.toast {
 	case ToastInfo:
-		return infoStatusStyle.Render("| " + m.message + " |")
+		return infoStatusStyle.Render("  | " + m.message + " |")
 	case ToastWarn:
-		return warnStatusStyle.Render("| " + m.message + " |")
+		return warnStatusStyle.Render("  | " + m.message + " |")
+	case ToastNotice:
+		return noticeStatusStyle.Render("  | " + m.message + " |")
+	case ToastDebug:
+		return debugStatusStyle.Render("  " + m.message)
 	}
 	return ""
 }

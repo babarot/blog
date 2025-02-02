@@ -24,6 +24,7 @@ const Key KeyType = "config"
 type Config struct {
 	LogWriter io.Writer `yaml:"-"`
 
+	Site   Site   `yaml:"site"`
 	Editor string `yaml:"editor"`
 	Hugo   Hugo   `yaml:"hugo"`
 }
@@ -39,6 +40,11 @@ type configError struct {
 
 type parser struct{}
 
+type Site struct {
+	Name string `yaml:"name"`
+	URL  string `yaml:"url"`
+}
+
 type Hugo struct {
 	Command    string `yaml:"command"`
 	RootDir    string `yaml:"root_dir"`
@@ -47,6 +53,10 @@ type Hugo struct {
 
 func (p parser) getDefaultConfig() Config {
 	return Config{
+		Site: Site{
+			Name: "My site",
+			URL:  "https://example.com",
+		},
 		Editor: "vim",
 		Hugo: Hugo{
 			Command: "hugo server",
