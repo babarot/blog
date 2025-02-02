@@ -10,7 +10,6 @@ import (
 	"strings"
 
 	"github.com/MakeNowJust/heredoc"
-	"github.com/babarot/blog/internal/blog"
 	"github.com/babarot/blog/internal/env"
 	"github.com/babarot/blog/internal/shell"
 	"github.com/go-playground/validator"
@@ -23,8 +22,7 @@ type KeyType string
 const Key KeyType = "config"
 
 type Config struct {
-	Posts     []blog.Article `yaml:"-"`
-	LogWriter io.Writer      `yaml:"-"`
+	LogWriter io.Writer `yaml:"-"`
 
 	Editor string `yaml:"editor"`
 	Hugo   Hugo   `yaml:"hugo"`

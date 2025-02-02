@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/babarot/blog/cmd"
+	"github.com/babarot/blog/internal/cmd"
 )
 
 func main() {
