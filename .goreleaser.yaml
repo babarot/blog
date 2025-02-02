@@ -13,9 +13,9 @@ builds:
       - darwin
     ldflags:
       - -s -w
-      - -X cmd.Version=v{{.Version}}
-      - -X cmd.Revision={{.ShortCommit}}
-      - -X cmd.BuiltAt={{.CommitDate}}
+      - -X github.com/babarot/blog/cmd.version=v{{.Version}}
+      - -X github.com/babarot/blog/cmd.revision={{.ShortCommit}}
+      - -X github.com/babarot/blog/cmd.buildDate={{.CommitDate}}
     main: .
 
 archives:

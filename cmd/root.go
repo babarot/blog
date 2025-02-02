@@ -25,9 +25,9 @@ var runID = sync.OnceValue(func() string {
 })
 
 var (
-	Version  = "unset"
-	Revision = "unset"
-	BuiltAt  = "unset"
+	version   = "unset"
+	revision  = "unset"
+	buildDate = "unset"
 )
 
 var (
@@ -41,7 +41,7 @@ func newRootCmd() *cobra.Command {
 		Short:              "A CLI tool that makes writing blogs easier",
 		SilenceErrors:      true,
 		DisableSuggestions: false,
-		Version:            fmt.Sprintf("%s (%s/%s)", Version, Revision, BuiltAt),
+		Version:            fmt.Sprintf("%s (%s/%s)", version, revision, buildDate),
 		PersistentPreRunE: func(cmd *cobra.Command, _ []string) error {
 			logDir := filepath.Dir(env.BLOG_LOG_PATH)
 			if _, err := os.Stat(logDir); os.IsNotExist(err) {
@@ -73,8 +73,8 @@ func newRootCmd() *cobra.Command {
 
 			defer slog.Debug("root command finished")
 			slog.Debug("root command started",
-				"version", Version,
-				"revision", Revision,
+				"version", version,
+				"revision", revision,
 				"go", runtime.Version(),
 				"args", os.Args,
 			)
