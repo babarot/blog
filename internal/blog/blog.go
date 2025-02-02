@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/charmbracelet/bubbles/list"
 	"gopkg.in/yaml.v2"
 )
 
@@ -21,6 +22,9 @@ type Article struct {
 	Dirname  string
 	Path     string
 }
+
+// Article implements list.Item
+var _ list.Item = (*Article)(nil)
 
 func (p Article) Slug() string {
 	slug := p.Dirname

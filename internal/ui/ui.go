@@ -55,8 +55,6 @@ func Init(c config.Config) Model {
 	}
 }
 
-var _ list.DefaultItem = (*blog.Article)(nil)
-
 func (m Model) Init() tea.Cmd {
 	return tea.Batch(
 		ShowToast("hugo server is running in background!", ToastInfo),
