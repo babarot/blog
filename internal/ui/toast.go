@@ -14,14 +14,14 @@ var (
 	PrimaryGrayColor   = lipgloss.Color("#767676")
 	SecondaryGrayColor = lipgloss.Color("#3a3b5b")
 	AccentColor        = lipgloss.Color("#a7cb77")
-	DebugColor         = lipgloss.Color("#5c5c5c")
+	SuccessColor       = lipgloss.Color("#58b4ad")
 	BaseColor          = lipgloss.Color("#853d8a") // #ad58b4
 )
 
 var (
 	infoStatusStyle   = lipgloss.NewStyle().Foreground(PrimaryColor)
 	warnStatusStyle   = lipgloss.NewStyle().Foreground(TertiaryColor)
-	debugStatusStyle  = lipgloss.NewStyle().Foreground(DebugColor)
+	debugStatusStyle  = lipgloss.NewStyle().Foreground(PrimaryGrayColor)
 	noticeStatusStyle = lipgloss.NewStyle().Foreground(BaseColor)
 )
 
@@ -64,11 +64,11 @@ func (m *ToastModel) View() string {
 	}
 	switch m.toast {
 	case ToastInfo:
-		return infoStatusStyle.Render("  | " + m.message + " |")
+		return infoStatusStyle.Render("  " + m.message)
 	case ToastWarn:
-		return warnStatusStyle.Render("  | " + m.message + " |")
+		return warnStatusStyle.Render("  " + m.message)
 	case ToastNotice:
-		return noticeStatusStyle.Render("  | " + m.message + " |")
+		return noticeStatusStyle.Render("  " + m.message)
 	case ToastDebug:
 		return debugStatusStyle.Render("  " + m.message)
 	}

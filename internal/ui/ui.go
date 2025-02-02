@@ -68,7 +68,7 @@ func Init(c config.Config) Model {
 
 func (m Model) Init() tea.Cmd {
 	return tea.Batch(
-		ShowToast("hugo server is running in background!", ToastNotice),
+		ShowToast(" hugo server is running in background!", ToastInfo),
 		m.loadArticles,
 	)
 }
