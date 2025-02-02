@@ -11,7 +11,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/babarot/blog/internal/blog"
 	"github.com/babarot/blog/internal/config"
 	"github.com/babarot/blog/internal/env"
 	"github.com/charmbracelet/log"
@@ -34,7 +33,6 @@ var (
 	configPath string
 )
 
-// newRootCmd returns the root command
 func newRootCmd() *cobra.Command {
 	rootCmd := &cobra.Command{
 		Use:                "blog",
@@ -83,13 +81,6 @@ func newRootCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-
-			articles, err := blog.Posts(c.Hugo.RootDir, c.Hugo.ContentDir)
-			if err != nil {
-				return err
-			}
-
-			c.Posts = articles
 			c.LogWriter = w
 
 			ctx := context.WithValue(cmd.Context(), config.Key, c)

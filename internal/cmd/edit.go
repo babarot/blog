@@ -74,12 +74,7 @@ func (c *editCmd) run(args []string) error {
 		done <- err
 	}()
 
-	prog := tea.NewProgram(ui.NewModel(
-		c.config.Editor,
-		c.config.Hugo.RootDir,
-		c.config.Hugo.ContentDir,
-	))
-	if _, err := prog.Run(); err != nil {
+	if _, err := tea.NewProgram(ui.Init(c.config)).Run(); err != nil {
 		return err
 	}
 

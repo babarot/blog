@@ -1,7 +1,7 @@
 # blog—Makes writing blogs easier!
 
 <p align="center">
-  <img src="docs/v2.png" width="600">
+  <img src="docs/v2_2.png" width="600">
 </p>
 
 This is a CLI tool that makes writing blog posts easier. It is primarily designed for publishing on [tellme.tokyo](https://tellme.tokyo).
