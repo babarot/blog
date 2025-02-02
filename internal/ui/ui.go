@@ -5,74 +5,57 @@ import (
 	"os/exec"
 
 	"github.com/babarot/blog/internal/blog"
+	"github.com/babarot/blog/internal/config"
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
 type Model struct {
-	keys       AdditionalKeys
+	keymap   *keymap
+	list     list.Model
+	toast    tea.Model
+	err      error
+	quitting bool
+
 	editor     string
 	rootDir    string
 	contentDir string
-	articles   []blog.Article
-	list       list.Model
-	toast      tea.Model
 	showDraft  bool
-	err        error
-	quitting   bool
 }
 
-type errMsg struct {
-	err error
+type keymap struct {
+	Quit  key.Binding
+	Edit  key.Binding
+	Draft key.Binding
 }
 
-func NewModel(editor, rootDir, contentDir string) Model {
-	keys := AdditionalKeyMap()
-	l := list.NewDefaultDelegate()
-	l.ShortHelpFunc = keys.ShortHelp
-	l.FullHelpFunc = keys.FullHelp
-	m := Model{
-		keys:       keys,
-		editor:     editor,
-		rootDir:    rootDir,
-		contentDir: contentDir,
-		articles:   []blog.Article{},
-		list:       list.New(nil, l, 10, 30),
-		toast:      NewToast(),
-		showDraft:  false,
-		err:        nil,
+func Init(c config.Config) Model {
+	keymap := &keymap{
+		Quit:  key.NewBinding(key.WithKeys("ctrl+c", "q"), key.WithHelp("q", "quit")),
+		Edit:  key.NewBinding(key.WithKeys("enter"), key.WithHelp("↵", "edit")),
+		Draft: key.NewBinding(key.WithKeys("d"), key.WithHelp("d", "draft")),
 	}
-	return m
+	l := list.New(nil, list.NewDefaultDelegate(), 10, 30)
+	l.SetShowTitle(false)
+	l.SetShowStatusBar(true)
+	l.DisableQuitKeybindings()
+	l.AdditionalFullHelpKeys = func() []key.Binding { return []key.Binding{keymap.Edit, keymap.Draft} }
+	l.AdditionalShortHelpKeys = func() []key.Binding { return []key.Binding{keymap.Edit, keymap.Draft} }
+	return Model{
+		keymap:     keymap,
+		list:       l,
+		toast:      NewToast(),
+		err:        nil,
+		quitting:   false,
+		editor:     c.Editor,
+		rootDir:    c.Hugo.RootDir,
+		contentDir: c.Hugo.ContentDir,
+		showDraft:  false,
+	}
 }
 
 var _ list.DefaultItem = (*blog.Article)(nil)
-
-type articlesLoadedMsg struct {
-	pages []list.Item
-	err   error
-}
-
-func (m Model) loadArticles() tea.Msg {
-	var items []list.Item
-	var err error
-
-	m.articles, err = blog.Posts(m.rootDir, m.contentDir)
-	if err != nil {
-		return articlesLoadedMsg{err: err}
-	}
-
-	for _, article := range m.articles {
-		if !m.showDraft {
-			if article.Draft {
-				continue
-			}
-		}
-		items = append(items, article)
-	}
-
-	return articlesLoadedMsg{pages: items}
-}
 
 func (m Model) Init() tea.Cmd {
 	return tea.Batch(
@@ -86,6 +69,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		cmds []tea.Cmd
 		cmd  tea.Cmd
 	)
+
 	// global listeners
 	m.toast, cmd = m.toast.Update(msg)
 	cmds = append(cmds, cmd)
@@ -95,24 +79,19 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.list.SetWidth(msg.Width)
 
 	case articlesLoadedMsg:
-		if msg.err != nil {
-			m.err = msg.err
-			m.quitting = true
-			return m, tea.Quit
-		}
-		m.list.SetItems(msg.pages)
+		m.list.SetItems(msg.articles)
 
 	case tea.KeyMsg:
 		switch {
-		case key.Matches(msg, m.keys.Quit):
+		case key.Matches(msg, m.keymap.Quit):
 			m.quitting = true
 			return m, tea.Quit
 
-		case key.Matches(msg, m.keys.Draft):
+		case key.Matches(msg, m.keymap.Draft):
 			m.showDraft = !m.showDraft
 			return m, m.loadArticles
 
-		case key.Matches(msg, m.keys.Edit):
+		case key.Matches(msg, m.keymap.Edit):
 			if m.list.FilterState() != list.Filtering {
 				if selected := m.list.SelectedItem(); selected != nil {
 					article := selected.(blog.Article)
@@ -123,18 +102,19 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 	case editorFinishedMsg:
+		slog.Debug("editorFinishedMsg")
 		if msg.err != nil {
+			slog.Error("editorFinishedMsg", "error", msg.err)
 			m.err = msg.err
-			m.quitting = true
 			return m, tea.Quit
 		}
 		return m, m.loadArticles
 
 	case errMsg:
-		if msg.err != nil {
-			slog.Warn("got an error", "error", msg.err)
-			m.err = msg.err
-			return m, nil
+		if msg.error != nil {
+			slog.Error("errMsg", "error", msg.error)
+			m.err = msg.error
+			return m, tea.Quit
 		}
 	}
 
@@ -154,7 +134,37 @@ func (m Model) View() string {
 	return m.list.View() + "\n" + m.toast.View()
 }
 
+// msgs
+
+type errMsg struct{ error }
+
+func (e errMsg) Error() string { return e.error.Error() }
+
+type articlesLoadedMsg struct{ articles []list.Item }
+
 type editorFinishedMsg struct{ err error }
+
+// cmds
+
+func (m Model) loadArticles() tea.Msg {
+	var items []list.Item
+
+	articles, err := blog.Posts(m.rootDir, m.contentDir)
+	if err != nil {
+		return errMsg{err}
+	}
+
+	for _, article := range articles {
+		if !m.showDraft {
+			if article.Draft {
+				continue
+			}
+		}
+		items = append(items, article)
+	}
+
+	return articlesLoadedMsg{articles: items}
+}
 
 func (m Model) openEditor(path string) tea.Cmd {
 	if m.editor == "" {
