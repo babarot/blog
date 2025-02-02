@@ -68,7 +68,6 @@ func Init(c config.Config) Model {
 
 func (m Model) Init() tea.Cmd {
 	return tea.Batch(
-		ShowToast(" hugo server is running in background!", ToastInfo),
 		m.loadArticles,
 	)
 }
@@ -89,6 +88,9 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case articlesLoadedMsg:
 		m.list.SetItems(msg.articles)
+
+	case HugoServerMsg:
+		cmds = append(cmds, ShowToast(" "+msg.Text, msg.Type))
 
 	case tea.KeyMsg:
 		switch {
@@ -158,6 +160,11 @@ func (e errMsg) Error() string { return e.error.Error() }
 type articlesLoadedMsg struct{ articles []list.Item }
 
 type editorFinishedMsg struct{ err error }
+
+type HugoServerMsg struct {
+	Text string
+	Type ToastType
+}
 
 // cmds
 
