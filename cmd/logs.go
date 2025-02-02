@@ -13,7 +13,7 @@ import (
 type logsCmd struct {
 	config config.Config
 
-	follow bool
+	followNew bool
 }
 
 func newLogsCmd() *cobra.Command {
@@ -21,8 +21,9 @@ func newLogsCmd() *cobra.Command {
 
 	logsCmd := &cobra.Command{
 		Use:                   "logs",
-		Short:                 "Show logs",
+		Short:                 "Stream logs in real-time, like tail -f",
 		Aliases:               []string{},
+		GroupID:               "main",
 		DisableFlagsInUseLine: true,
 		SilenceUsage:          true,
 		SilenceErrors:         true,
@@ -35,26 +36,25 @@ func newLogsCmd() *cobra.Command {
 	}
 
 	f := logsCmd.Flags()
-	f.BoolVarP(&c.follow, "follow", "f", false, "follow logs")
+	f.BoolVarP(&c.followNew, "follow-new", "n", false, "Stream only new logs, ignoring existing ones.")
 
 	return logsCmd
 }
 
 func (c *logsCmd) run(args []string) error {
-	cfg := tail.Config{
+	tailConfig := tail.Config{
 		ReOpen: true,
 		Poll:   true,
 		Follow: true,
 		Logger: tail.DiscardingLogger,
 	}
-	if c.follow {
-		seekinfo := &tail.SeekInfo{
+	if c.followNew {
+		tailConfig.Location = &tail.SeekInfo{
 			Offset: 0,
 			Whence: io.SeekEnd,
 		}
-		cfg.Location = seekinfo
 	}
-	t, err := tail.TailFile(env.BLOG_LOG_PATH, cfg)
+	t, err := tail.TailFile(env.BLOG_LOG_PATH, tailConfig)
 	for line := range t.Lines {
 		fmt.Println(line.Text)
 	}

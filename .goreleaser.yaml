@@ -13,9 +13,9 @@ builds:
       - darwin
     ldflags:
       - -s -w
-      - -X main.version=v{{.Version}}
-      - -X main.revision={{.ShortCommit}}
-      - -X main.date={{.CommitDate}}
+      - -X cmd.Version=v{{.Version}}
+      - -X cmd.Revision={{.ShortCommit}}
+      - -X cmd.BuiltAt={{.CommitDate}}
     main: .
 
 archives:

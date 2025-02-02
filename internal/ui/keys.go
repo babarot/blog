@@ -3,14 +3,16 @@ package ui
 import "github.com/charmbracelet/bubbles/key"
 
 type AdditionalKeys struct {
+	Quit  key.Binding
 	Edit  key.Binding
 	Draft key.Binding
 }
 
 func AdditionalKeyMap() AdditionalKeys {
 	return AdditionalKeys{
-		Edit:  key.NewBinding(key.WithKeys("enter", "e"), key.WithHelp("enter/e", "edit")),
-		Draft: key.NewBinding(key.WithKeys("d"), key.WithHelp("d", "toggle draft")),
+		Quit:  key.NewBinding(key.WithKeys("ctrl+c", "q", "esc"), key.WithHelp("q", "quit")),
+		Edit:  key.NewBinding(key.WithKeys("enter"), key.WithHelp("↵", "edit")),
+		Draft: key.NewBinding(key.WithKeys("d"), key.WithHelp("d", "draft")),
 	}
 }
 

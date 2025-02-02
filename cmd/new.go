@@ -30,6 +30,7 @@ func newNewCmd() *cobra.Command {
 		Use:                   "new",
 		Short:                 "Create new article",
 		Aliases:               []string{},
+		GroupID:               "main",
 		DisableFlagsInUseLine: true,
 		SilenceUsage:          true,
 		SilenceErrors:         true,
@@ -171,7 +172,7 @@ func (c *newCmd) run(args []string) error {
 	cancel()
 	// wait for stopping hugo
 	if err := <-done; err != nil {
-		slog.Error("error failed")
+		slog.Error("error failed", "error", err)
 		return err
 	}
 
