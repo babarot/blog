@@ -57,7 +57,7 @@ func Init(c config.Config) Model {
 
 	l.DisableQuitKeybindings()
 	l.AdditionalShortHelpKeys = func() []key.Binding {
-		return []key.Binding{keymap.Edit, keymap.Draft}
+		return []key.Binding{keymap.Edit}
 	}
 	l.AdditionalFullHelpKeys = func() []key.Binding {
 		return []key.Binding{keymap.Edit, keymap.Open, keymap.Draft}
