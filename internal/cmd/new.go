@@ -164,7 +164,7 @@ func (c *newCmd) run(args []string) error {
 	}()
 
 	slog.Debug("running", "editor", c.config.Editor)
-	if err := shell.RunCommand(fmt.Sprintf("%s %s", c.config.Editor, mdPath)); err != nil {
+	if err := shell.Command(c.config.Editor, mdPath).Run(); err != nil {
 		return fmt.Errorf("failed to run %s: %w", c.config.Editor, err)
 	}
 

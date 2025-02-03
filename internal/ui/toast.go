@@ -22,7 +22,7 @@ var (
 	infoStatusStyle   = lipgloss.NewStyle().Foreground(PrimaryColor)
 	warnStatusStyle   = lipgloss.NewStyle().Foreground(TertiaryColor)
 	debugStatusStyle  = lipgloss.NewStyle().Foreground(PrimaryGrayColor)
-	noticeStatusStyle = lipgloss.NewStyle().Foreground(BaseColor)
+	noticeStatusStyle = lipgloss.NewStyle().Foreground(SuccessColor)
 )
 
 type ShowToastMsg struct {

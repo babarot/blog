@@ -26,6 +26,7 @@ type Config struct {
 
 	Site   Site   `yaml:"site"`
 	Editor string `yaml:"editor"`
+	Open   string `yaml:"open_command"`
 	Hugo   Hugo   `yaml:"hugo"`
 }
 
@@ -58,6 +59,7 @@ func (p parser) getDefaultConfig() Config {
 			URL:  "https://example.com",
 		},
 		Editor: "vim",
+		Open:   "open",
 		Hugo: Hugo{
 			Command: "hugo server",
 		},
