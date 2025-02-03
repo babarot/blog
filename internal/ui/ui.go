@@ -2,11 +2,13 @@ package ui
 
 import (
 	"log/slog"
-	"os/exec"
+	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/babarot/blog/internal/blog"
 	"github.com/babarot/blog/internal/config"
+	"github.com/babarot/blog/internal/shell"
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
@@ -20,7 +22,8 @@ type Model struct {
 	err      error
 	quitting bool
 
-	editor     string
+	editorCmd  string
+	openCmd    string
 	rootDir    string
 	contentDir string
 	showDraft  bool
@@ -29,6 +32,7 @@ type Model struct {
 type keymap struct {
 	Quit  key.Binding
 	Edit  key.Binding
+	Open  key.Binding
 	Draft key.Binding
 }
 
@@ -36,6 +40,7 @@ func Init(c config.Config) Model {
 	keymap := &keymap{
 		Quit:  key.NewBinding(key.WithKeys("ctrl+c", "q"), key.WithHelp("q", "quit")),
 		Edit:  key.NewBinding(key.WithKeys("enter"), key.WithHelp("↵", "edit")),
+		Open:  key.NewBinding(key.WithKeys("o"), key.WithHelp("o", "open")),
 		Draft: key.NewBinding(key.WithKeys("d"), key.WithHelp("d", "draft")),
 	}
 	l := list.New(nil, list.NewDefaultDelegate(), 10, 30)
@@ -51,15 +56,20 @@ func Init(c config.Config) Model {
 	l.StatusMessageLifetime = time.Second * 3
 
 	l.DisableQuitKeybindings()
-	l.AdditionalFullHelpKeys = func() []key.Binding { return []key.Binding{keymap.Edit, keymap.Draft} }
-	l.AdditionalShortHelpKeys = func() []key.Binding { return []key.Binding{keymap.Edit, keymap.Draft} }
+	l.AdditionalShortHelpKeys = func() []key.Binding {
+		return []key.Binding{keymap.Edit, keymap.Draft}
+	}
+	l.AdditionalFullHelpKeys = func() []key.Binding {
+		return []key.Binding{keymap.Edit, keymap.Open, keymap.Draft}
+	}
 	return Model{
 		keymap:     keymap,
 		list:       l,
 		toast:      NewToast(),
 		err:        nil,
 		quitting:   false,
-		editor:     c.Editor,
+		editorCmd:  c.Editor,
+		openCmd:    c.Open,
 		rootDir:    c.Hugo.RootDir,
 		contentDir: c.Hugo.ContentDir,
 		showDraft:  false,
@@ -104,7 +114,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if m.showDraft {
 				msg = "show draft posts!"
 			}
-			cmds = append(cmds, m.list.NewStatusMessage(msg), ShowToast(msg, ToastDebug), m.loadArticles)
+			cmds = append(cmds, m.list.NewStatusMessage(msg), ShowToast(msg, ToastNotice), m.loadArticles)
 			// do not call m.list.Update
 			return m, tea.Batch(cmds...)
 
@@ -114,6 +124,15 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					article := selected.(blog.Article)
 					slog.Debug("edit", "file", article.Meta.Title)
 					return m, m.openEditor(article.Path)
+				}
+			}
+
+		case key.Matches(msg, m.keymap.Open):
+			if m.list.FilterState() != list.Filtering {
+				if selected := m.list.SelectedItem(); selected != nil {
+					article := selected.(blog.Article)
+					slog.Debug("open", "folder", article.Dirname)
+					return m, m.openFolder(article.Path)
 				}
 			}
 		}
@@ -126,6 +145,14 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tea.Quit
 		}
 		cmds = append(cmds, m.loadArticles)
+
+	case openFinishedMsg:
+		slog.Debug("openFinishedMsg")
+		if msg.err != nil {
+			slog.Error("openFinishedMsg", "error", msg.err)
+			return m, ShowToast("failed to open", ToastWarn)
+		}
+		cmds = append(cmds, ShowToast("open "+strings.TrimPrefix(msg.target, m.rootDir+"/"), ToastNotice))
 
 	case errMsg:
 		if msg.error != nil {
@@ -161,6 +188,11 @@ type articlesLoadedMsg struct{ articles []list.Item }
 
 type editorFinishedMsg struct{ err error }
 
+type openFinishedMsg struct {
+	target string
+	err    error
+}
+
 type HugoServerMsg struct {
 	Text string
 	Type ToastType
@@ -189,11 +221,22 @@ func (m Model) loadArticles() tea.Msg {
 }
 
 func (m Model) openEditor(path string) tea.Cmd {
-	if m.editor == "" {
+	if m.editorCmd == "" {
 		return ShowToast("editor not set", ToastWarn)
 	}
-	c := exec.Command(m.editor, path)
+	c := shell.Command(m.editorCmd, path)
 	return tea.ExecProcess(c, func(err error) tea.Msg {
 		return editorFinishedMsg{err}
+	})
+}
+
+func (m Model) openFolder(path string) tea.Cmd {
+	if m.openCmd == "" {
+		return ShowToast("open command not set", ToastWarn)
+	}
+	dir := filepath.Dir(path)
+	c := shell.Command(m.openCmd, dir)
+	return tea.ExecProcess(c, func(err error) tea.Msg {
+		return openFinishedMsg{target: dir, err: err}
 	})
 }

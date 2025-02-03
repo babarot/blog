@@ -21,11 +21,7 @@ type Shell struct {
 	Dir     string
 }
 
-func (s Shell) Run(ctx context.Context) error {
-	if s.Command == "" {
-		return errors.New("command not found")
-	}
-
+func (s Shell) exec(ctx context.Context) *exec.Cmd {
 	var cmd *exec.Cmd
 	if runtime.GOOS == "windows" {
 		cmd = exec.CommandContext(ctx, "cmd", "/c", s.Command)
@@ -45,16 +41,23 @@ func (s Shell) Run(ctx context.Context) error {
 	}
 
 	slog.Info("running shell", "command", s.Command)
-	return cmd.Run()
+	return cmd
 }
 
-func RunCommand(command string) error {
+func (s Shell) Run(ctx context.Context) error {
+	if s.Command == "" {
+		return errors.New("command not found")
+	}
+	return s.exec(ctx).Run()
+}
+
+func Command(command ...string) *exec.Cmd {
 	return Shell{
-		Command: command,
+		Command: strings.Join(command, " "),
 		Stdin:   os.Stdin,
 		Stdout:  os.Stdout,
-		Stderr:  os.Stderr,
-	}.Run(context.Background())
+		Stderr:  io.Discard,
+	}.exec(context.Background())
 }
 
 func ExpandHome(input string) (string, error) {
