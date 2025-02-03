@@ -51,6 +51,8 @@ func (c *editCmd) run(args []string) error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
+	p := tea.NewProgram(ui.Init(c.config))
+
 	hugo := shell.Shell{
 		Command: c.config.Hugo.Command,
 		Dir:     c.config.Hugo.RootDir,
@@ -60,6 +62,7 @@ func (c *editCmd) run(args []string) error {
 
 	done := make(chan error)
 	go func() {
+		p.Send(ui.HugoServerMsg{Text: "hugo server is running in background!", Type: ui.ToastInfo})
 		err := hugo.Run(ctx)
 		if err != nil {
 			if errors.Is(err, context.Canceled) {
@@ -67,6 +70,7 @@ func (c *editCmd) run(args []string) error {
 				done <- nil
 				return
 			}
+			p.Send(ui.HugoServerMsg{Text: "hugo server failed...", Type: ui.ToastWarn})
 			slog.Error("hugo failed", "error", err)
 		} else {
 			slog.Debug("hugo finished")
@@ -74,7 +78,7 @@ func (c *editCmd) run(args []string) error {
 		done <- err
 	}()
 
-	if _, err := tea.NewProgram(ui.Init(c.config)).Run(); err != nil {
+	if _, err := p.Run(); err != nil {
 		return err
 	}
 
