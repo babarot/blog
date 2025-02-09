@@ -1,5 +1,14 @@
 # Changelog
 
+## [v0.1.11](https://github.com/babarot/blog/compare/v0.1.10...v0.1.11) - 2025-02-03
+### New Features
+- Add hugo server msg by @babarot in https://github.com/babarot/blog/pull/12
+- Add open action in UI by @babarot in https://github.com/babarot/blog/pull/13
+### Refactorings
+- Refactoring by @babarot in https://github.com/babarot/blog/pull/11
+### Others
+- Additional update to UI by @babarot in https://github.com/babarot/blog/pull/10
+
 ## [v0.1.10](https://github.com/babarot/blog/compare/v0.1.9...v0.1.10) - 2025-02-01
 ### New Features
 - Update UI by @babarot in https://github.com/babarot/blog/pull/7
