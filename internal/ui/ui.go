@@ -13,40 +13,45 @@ import (
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/pkg/browser"
 )
 
 type Model struct {
+	config config.Config
+
 	keymap   *keymap
 	list     list.Model
 	toast    tea.Model
 	err      error
 	quitting bool
 
-	editorCmd  string
-	openCmd    string
-	rootDir    string
-	contentDir string
-	showDraft  bool
+	editorCmd string
+	openCmd   string
+	showDraft bool
 }
 
 type keymap struct {
-	Quit  key.Binding
-	Edit  key.Binding
-	Open  key.Binding
-	Draft key.Binding
+	Quit      key.Binding
+	Edit      key.Binding
+	Open      key.Binding
+	Draft     key.Binding
+	Browse    key.Binding
+	BrowseDev key.Binding
 }
 
 func Init(c config.Config) Model {
 	keymap := &keymap{
-		Quit:  key.NewBinding(key.WithKeys("ctrl+c", "q"), key.WithHelp("q", "quit")),
-		Edit:  key.NewBinding(key.WithKeys("enter"), key.WithHelp("↵", "edit")),
-		Open:  key.NewBinding(key.WithKeys("o"), key.WithHelp("o", "open")),
-		Draft: key.NewBinding(key.WithKeys("d"), key.WithHelp("d", "draft")),
+		Quit:      key.NewBinding(key.WithKeys("ctrl+c", "q"), key.WithHelp("q", "quit")),
+		Edit:      key.NewBinding(key.WithKeys("enter"), key.WithHelp("↵", "edit")),
+		Open:      key.NewBinding(key.WithKeys("o"), key.WithHelp("o", "open")),
+		Draft:     key.NewBinding(key.WithKeys("d"), key.WithHelp("d", "draft")),
+		Browse:    key.NewBinding(key.WithKeys("b"), key.WithHelp("b", "browse")),
+		BrowseDev: key.NewBinding(key.WithKeys("B"), key.WithHelp("B", "browse (dev)")),
 	}
 	l := list.New(nil, list.NewDefaultDelegate(), 10, 30)
 
 	l.SetShowTitle(false)
-	l.Title = c.Site.Name
+	l.Title = c.Blog.Name
 	l.Styles.TitleBar = lipgloss.NewStyle().Padding(0, 0, 1, 2)
 	l.Styles.Title = lipgloss.NewStyle().
 		Background(lipgloss.Color("#ee6ff8")). // #ee6ff8, #ad58b4, (#a743fd, #22222e, #706f8e)
@@ -60,19 +65,21 @@ func Init(c config.Config) Model {
 		return []key.Binding{keymap.Edit}
 	}
 	l.AdditionalFullHelpKeys = func() []key.Binding {
-		return []key.Binding{keymap.Edit, keymap.Open, keymap.Draft}
+		return []key.Binding{
+			keymap.Edit, keymap.Open, keymap.Draft,
+			keymap.Browse, keymap.BrowseDev,
+		}
 	}
 	return Model{
-		keymap:     keymap,
-		list:       l,
-		toast:      NewToast(),
-		err:        nil,
-		quitting:   false,
-		editorCmd:  c.Editor,
-		openCmd:    c.Open,
-		rootDir:    c.Hugo.RootDir,
-		contentDir: c.Hugo.ContentDir,
-		showDraft:  false,
+		config:    c,
+		keymap:    keymap,
+		list:      l,
+		toast:     NewToast(),
+		err:       nil,
+		quitting:  false,
+		editorCmd: c.Editor,
+		openCmd:   c.Open,
+		showDraft: false,
 	}
 }
 
@@ -135,6 +142,22 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					return m, m.openFolder(article.Path)
 				}
 			}
+
+		case key.Matches(msg, m.keymap.Browse):
+			if m.list.FilterState() != list.Filtering {
+				if selected := m.list.SelectedItem(); selected != nil {
+					article := selected.(blog.Article)
+					return m, openURL(article.URL())
+				}
+			}
+
+		case key.Matches(msg, m.keymap.BrowseDev):
+			if m.list.FilterState() != list.Filtering {
+				if selected := m.list.SelectedItem(); selected != nil {
+					article := selected.(blog.Article)
+					return m, openURL(article.DevURL())
+				}
+			}
 		}
 
 	case editorFinishedMsg:
@@ -152,7 +175,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			slog.Error("openFinishedMsg", "error", msg.err)
 			return m, ShowToast("failed to open", ToastWarn)
 		}
-		cmds = append(cmds, ShowToast("open "+strings.TrimPrefix(msg.target, m.rootDir+"/"), ToastNotice))
+		rootDir := m.config.Hugo.RootDir
+		cmds = append(cmds, ShowToast("open "+strings.TrimPrefix(msg.target, rootDir+"/"), ToastNotice))
 
 	case errMsg:
 		if msg.error != nil {
@@ -203,7 +227,7 @@ type HugoServerMsg struct {
 func (m Model) loadArticles() tea.Msg {
 	var items []list.Item
 
-	articles, err := blog.Posts(m.rootDir, m.contentDir)
+	articles, err := blog.Posts(m.config)
 	if err != nil {
 		return errMsg{err}
 	}
@@ -239,4 +263,10 @@ func (m Model) openFolder(path string) tea.Cmd {
 	return tea.ExecProcess(c, func(err error) tea.Msg {
 		return openFinishedMsg{target: dir, err: err}
 	})
+}
+
+func openURL(url string) tea.Cmd {
+	return func() tea.Msg {
+		return errMsg{browser.OpenURL(url)}
+	}
 }

@@ -12,6 +12,7 @@ require (
 	github.com/go-playground/validator v9.31.0+incompatible
 	github.com/muesli/reflow v0.3.0
 	github.com/nxadm/tail v1.4.11
+	github.com/pkg/browser v0.0.0-20240102092130-5ac0b6a4141c
 	github.com/rs/xid v1.6.0
 	github.com/spf13/cobra v1.8.1
 	gopkg.in/yaml.v2 v2.4.0
