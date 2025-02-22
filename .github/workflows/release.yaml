@@ -25,11 +25,13 @@ jobs:
         id: run-tagpr
       - name: Check for empty changelog entries
         if: steps.run-tagpr.outputs.pull_request != ''
-        uses: babarot/changelog-empty-check-action@v0.0.8
+        uses: babarot/changelog-empty-check-action@v0.0.9
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           label-name: changelog-missing
           pull-request-number: ${{ fromJSON(steps.run-tagpr.outputs.pull_request).number }}
+          empty-message: "❌ Following changelog entries are empty:\n{entries}"
+          filled-message: "✨ Thank you for updating the changelog!"
         env:
           GITHUB_SHA: ${{ github.sha }}
           BASE_SHA: ${{ github.event.before }}
