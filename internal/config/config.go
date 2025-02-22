@@ -24,10 +24,10 @@ const Key KeyType = "config"
 type Config struct {
 	LogWriter io.Writer `yaml:"-"`
 
-	Site   Site   `yaml:"site"`
+	Blog   Blog   `yaml:"blog"`
+	Hugo   Hugo   `yaml:"hugo"`
 	Editor string `yaml:"editor"`
 	Open   string `yaml:"open_command"`
-	Hugo   Hugo   `yaml:"hugo"`
 }
 
 var validate *validator.Validate
@@ -41,9 +41,10 @@ type configError struct {
 
 type parser struct{}
 
-type Site struct {
-	Name string `yaml:"name"`
-	URL  string `yaml:"url"`
+type Blog struct {
+	Name    string `yaml:"name"`
+	URL     string `yaml:"url"`
+	DevPort int    `yaml:"dev_port"`
 }
 
 type Hugo struct {
@@ -54,15 +55,16 @@ type Hugo struct {
 
 func (p parser) getDefaultConfig() Config {
 	return Config{
-		Site: Site{
-			Name: "My site",
-			URL:  "https://example.com",
+		Blog: Blog{
+			Name:    "My site",
+			URL:     "https://example.com",
+			DevPort: 1313,
 		},
-		Editor: "vim",
-		Open:   "open",
 		Hugo: Hugo{
 			Command: "hugo server",
 		},
+		Editor: "vim",
+		Open:   "open",
 	}
 }
 

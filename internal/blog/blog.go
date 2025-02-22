@@ -4,18 +4,24 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"path"
 	"path/filepath"
 	"regexp"
 	"sort"
 	"strings"
 	"time"
 
+	"github.com/babarot/blog/internal/config"
 	"github.com/charmbracelet/bubbles/list"
 	"gopkg.in/yaml.v2"
 )
 
+const LocalHost = "http://localhost"
+
 type Article struct {
 	Meta
+
+	config config.Blog
 
 	Date     time.Time
 	Filename string
@@ -25,6 +31,15 @@ type Article struct {
 
 // Article implements list.Item
 var _ list.Item = (*Article)(nil)
+
+func (p Article) URL() string {
+	return path.Join(p.config.URL, "post", p.Date.Format("2006/01/02"), p.Slug())
+}
+
+func (p Article) DevURL() string {
+	localhost := fmt.Sprintf("%s:%d", LocalHost, p.config.DevPort)
+	return path.Join(localhost, "post", p.Date.Format("2006/01/02"), p.Slug())
+}
 
 func (p Article) Slug() string {
 	slug := p.Dirname
@@ -66,13 +81,15 @@ type Meta struct {
 }
 
 type Blog struct {
+	Config   config.Blog
 	Path     string
 	Articles []Article
 }
 
-func Posts(root, dir string) ([]Article, error) {
+func Posts(c config.Config) ([]Article, error) {
 	b := Blog{
-		Path: filepath.Join(root, dir),
+		Config: c.Blog,
+		Path:   filepath.Join(c.Hugo.RootDir, c.Hugo.ContentDir),
 	}
 	if err := b.Walk(); err != nil {
 		return []Article{}, err
@@ -107,6 +124,7 @@ func (p *Blog) Walk() error {
 		}
 		date, _ := time.Parse("2006-01-02T15:04:05-07:00", meta.Date)
 		p.Articles = append(p.Articles, Article{
+			config:   p.Config,
 			Date:     date,
 			Filename: filepath.Base(path),
 			Dirname:  filepath.Base(filepath.Dir(path)),
