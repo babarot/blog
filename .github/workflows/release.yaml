@@ -23,8 +23,24 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         id: run-tagpr
+
+      - name: Check for empty changelog entries
+        if: steps.run-tagpr.outputs.pull_request != ''
+        uses: babarot/changelog-empty-check-action@v0.0.8
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          label-name: 'empty-changelog'
+          pull-request-number: ${{ fromJSON(steps.run-tagpr.outputs.pull_request).number }}
+        env:
+          GITHUB_SHA: ${{ github.sha }}
+          BASE_SHA: ${{ github.event.before }}
+          GITHUB_EVENT_NAME: pull_request
+          GITHUB_EVENT_PATH: ${{ github.event_path }}
+          ACTIONS_STEP_DEBUG: true
+
     outputs:
       tag: ${{ steps.run-tagpr.outputs.tag }}
+
 
   goreleaser:
     if: needs.tagpr.outputs.tag != ''
