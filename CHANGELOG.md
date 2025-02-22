@@ -1,5 +1,7 @@
 # Changelog
 
+## [v0.1.12](https://github.com/babarot/blog/compare/v0.1.11...v0.1.12) - 2025-02-22
+
 ## [v0.1.11](https://github.com/babarot/blog/compare/v0.1.10...v0.1.11) - 2025-02-03
 ### New Features
 - Add hugo server msg by @babarot in https://github.com/babarot/blog/pull/12
