@@ -23,7 +23,7 @@ jobs:
 
   check-changelog:
     runs-on: ubuntu-latest
-    # if: startsWith(github.event.pull_request.title, 'Release') # Check tagpr PR title
+    if: startsWith(github.event.pull_request.title, 'Release') # Check tagpr PR title
     steps:
       - uses: actions/checkout@v4
         with:
