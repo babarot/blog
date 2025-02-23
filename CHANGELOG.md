@@ -1,5 +1,9 @@
 # Changelog
 
+## [v0.1.13](https://github.com/babarot/blog/compare/v0.1.12...v0.1.13) - 2025-02-23
+### Others
+- Improve datetime parser by @babarot in https://github.com/babarot/blog/pull/19
+
 ## [v0.1.12](https://github.com/babarot/blog/compare/v0.1.11...v0.1.12) - 2025-02-23
 ### New Features
 - Make draft symbol configurable by @babarot in https://github.com/babarot/blog/pull/17
