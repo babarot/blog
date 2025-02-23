@@ -3,6 +3,7 @@ package blog
 import (
 	"bufio"
 	"fmt"
+	"log/slog"
 	"os"
 	"path"
 	"path/filepath"
@@ -127,7 +128,25 @@ func (p *Blog) Walk() error {
 		if err = yaml.Unmarshal(content, &meta); err != nil {
 			return err
 		}
-		date, _ := time.Parse("2006-01-02T15:04:05-07:00", meta.Date)
+
+		formats := []string{
+			"2006-01-02T15:04:05-07:00",
+			"2006-01-02T15:04:05",
+			"2006-01-02",
+		}
+		var date time.Time
+		for _, format := range formats {
+			date, err = time.Parse(format, meta.Date)
+			if err == nil {
+				break
+			}
+		}
+		if err != nil {
+			slog.Warn("failed to parse datetime with all formats",
+				"error", err,
+				"input", meta.Date)
+		}
+
 		p.Articles = append(p.Articles, Article{
 			config:   p.Config,
 			Date:     date,
