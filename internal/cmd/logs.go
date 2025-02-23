@@ -23,7 +23,7 @@ func newLogsCmd() *cobra.Command {
 		Use:                   "logs",
 		Short:                 "Stream logs in real-time, like tail -f",
 		Aliases:               []string{},
-		GroupID:               "main",
+		GroupID:               "sub",
 		DisableFlagsInUseLine: true,
 		SilenceUsage:          true,
 		SilenceErrors:         true,
