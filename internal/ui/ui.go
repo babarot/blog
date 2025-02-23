@@ -25,8 +25,8 @@ type Model struct {
 	err      error
 	quitting bool
 
-	editorCmd string
-	openCmd   string
+	editor    string
+	open      string
 	showDraft bool
 }
 
@@ -43,24 +43,20 @@ func Init(c config.Config) Model {
 	keymap := &keymap{
 		Quit:      key.NewBinding(key.WithKeys("ctrl+c", "q"), key.WithHelp("q", "quit")),
 		Edit:      key.NewBinding(key.WithKeys("enter"), key.WithHelp("↵", "edit")),
-		Open:      key.NewBinding(key.WithKeys("o"), key.WithHelp("o", "open")),
-		Draft:     key.NewBinding(key.WithKeys("d"), key.WithHelp("d", "draft")),
+		Open:      key.NewBinding(key.WithKeys("o"), key.WithHelp("o", "open folder")),
+		Draft:     key.NewBinding(key.WithKeys("d"), key.WithHelp("d", "show draft")),
 		Browse:    key.NewBinding(key.WithKeys("b"), key.WithHelp("b", "browse")),
 		BrowseDev: key.NewBinding(key.WithKeys("B"), key.WithHelp("B", "browse (dev)")),
 	}
-	l := list.New(nil, list.NewDefaultDelegate(), 10, 30)
 
-	l.SetShowTitle(false)
+	l := list.New(nil, list.NewDefaultDelegate(), 10, 30)
 	l.Title = c.Blog.Name
-	l.Styles.TitleBar = lipgloss.NewStyle().Padding(0, 0, 1, 2)
 	l.Styles.Title = lipgloss.NewStyle().
 		Background(lipgloss.Color("#ee6ff8")). // #ee6ff8, #ad58b4, (#a743fd, #22222e, #706f8e)
 		Foreground(lipgloss.Color("#22222e")).
 		Padding(0, 1)
-	l.SetShowStatusBar(true)
+	l.Styles.TitleBar = lipgloss.NewStyle().Padding(0, 0, 1, 2)
 	l.StatusMessageLifetime = time.Second * 3
-
-	l.DisableQuitKeybindings()
 	l.AdditionalShortHelpKeys = func() []key.Binding {
 		return []key.Binding{keymap.Edit}
 	}
@@ -70,6 +66,10 @@ func Init(c config.Config) Model {
 			keymap.Browse, keymap.BrowseDev,
 		}
 	}
+	l.SetShowTitle(false)
+	l.SetShowStatusBar(true)
+	l.DisableQuitKeybindings()
+
 	return Model{
 		config:    c,
 		keymap:    keymap,
@@ -77,8 +77,8 @@ func Init(c config.Config) Model {
 		toast:     NewToast(),
 		err:       nil,
 		quitting:  false,
-		editorCmd: c.Editor,
-		openCmd:   c.Open,
+		editor:    c.Editor,
+		open:      c.Open,
 		showDraft: false,
 	}
 }
@@ -107,7 +107,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.list.SetItems(msg.articles)
 
 	case HugoServerMsg:
-		cmds = append(cmds, ShowToast(" "+msg.Text, msg.Type))
+		cmds = append(cmds, ShowToast(msg.Text, msg.Type))
 
 	case tea.KeyMsg:
 		switch {
@@ -245,21 +245,21 @@ func (m Model) loadArticles() tea.Msg {
 }
 
 func (m Model) openEditor(path string) tea.Cmd {
-	if m.editorCmd == "" {
+	if m.editor == "" {
 		return ShowToast("editor not set", ToastWarn)
 	}
-	c := shell.Command(m.editorCmd, path)
+	c := shell.Command(m.editor, path)
 	return tea.ExecProcess(c, func(err error) tea.Msg {
 		return editorFinishedMsg{err}
 	})
 }
 
 func (m Model) openFolder(path string) tea.Cmd {
-	if m.openCmd == "" {
+	if m.open == "" {
 		return ShowToast("open command not set", ToastWarn)
 	}
 	dir := filepath.Dir(path)
-	c := shell.Command(m.openCmd, dir)
+	c := shell.Command(m.open, dir)
 	return tea.ExecProcess(c, func(err error) tea.Msg {
 		return openFinishedMsg{target: dir, err: err}
 	})
@@ -267,6 +267,7 @@ func (m Model) openFolder(path string) tea.Cmd {
 
 func openURL(url string) tea.Cmd {
 	return func() tea.Msg {
+		slog.Debug("open url", "url", url)
 		return errMsg{browser.OpenURL(url)}
 	}
 }

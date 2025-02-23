@@ -42,9 +42,15 @@ type configError struct {
 type parser struct{}
 
 type Blog struct {
-	Name    string `yaml:"name"`
-	URL     string `yaml:"url"`
-	DevPort int    `yaml:"dev_port"`
+	Name    string      `yaml:"name"`
+	URL     string      `yaml:"url"`
+	DevPort int         `yaml:"dev_port"`
+	Draft   DraftConfig `yaml:"draft"`
+}
+
+type DraftConfig struct {
+	Suffix string `yaml:"suffix"`
+	Color  string `yaml:"color"`
 }
 
 type Hugo struct {
@@ -59,6 +65,10 @@ func (p parser) getDefaultConfig() Config {
 			Name:    "My site",
 			URL:     "https://example.com",
 			DevPort: 1313,
+			Draft: DraftConfig{
+				Suffix: "::Draft",
+				Color:  "#5FB458",
+			},
 		},
 		Hugo: Hugo{
 			Command: "hugo server",
