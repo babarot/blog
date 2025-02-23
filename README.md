@@ -34,7 +34,7 @@ github:
   repo: blog
   release:
     name: blog
-    tag: v0.1.10
+    tag: v0.1.12
   command:
     link:
     - from: blog
