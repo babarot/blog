@@ -13,6 +13,7 @@ import (
 
 	"github.com/babarot/blog/internal/config"
 	"github.com/charmbracelet/bubbles/list"
+	"github.com/charmbracelet/lipgloss"
 	"gopkg.in/yaml.v2"
 )
 
@@ -56,9 +57,13 @@ func (p Article) Description() string {
 
 func (p Article) Title() string {
 	var suffix string
+
 	if p.Meta.Draft {
-		suffix = " ::Draft"
+		draftSuffix := p.config.Draft.Suffix
+		draftStyle := lipgloss.NewStyle().Foreground(lipgloss.Color(p.config.Draft.Color))
+		suffix = draftStyle.Render(" " + draftSuffix)
 	}
+
 	return p.Meta.Title + suffix
 }
 
