@@ -25,13 +25,13 @@ jobs:
     runs-on: ubuntu-latest
     if: startsWith(github.event.pull_request.title, 'Release') # Check tagpr PR title
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
 
       - name: Check for empty changelog entries
-        uses: babarot/changelog-empty-check-action@v0.0.1
+        uses: babarot/changelog-empty-check-action@d76c23d5d734c5e72877d184a15d272bc39cef4b # v0.0.19
         id: check
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
